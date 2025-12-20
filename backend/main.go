@@ -380,6 +380,22 @@ func normalizeCourseName(name string) string {
 	return strings.TrimSpace(name)
 }
 
+// 簡單的 CORS 中間件範例
+func commonMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*") // 生產環境建議指定前端網址
+		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// 1. 處理 Port：優先讀取環境變數 PORT，若無則預設為 10000 (Render 常用) 或 8080
 	port := os.Getenv("PORT")
@@ -398,6 +414,7 @@ func main() {
 
 	r := mux.NewRouter()
 	// ... 你的路由設定 ...
+	http.ListenAndServe(":"+port, commonMiddleware(r))
 
 	// 3. 啟動伺服器：務必監聽 "0.0.0.0"
 	fmt.Printf("伺服器已啟動於 Port %s...\n", port)
