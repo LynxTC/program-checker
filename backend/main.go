@@ -103,13 +103,14 @@ func isInProgress(scoreStr string) bool {
 }
 
 // 載入學程定義
-func loadPrograms() error {
-	data, err := os.ReadFile("programs.json")
+func loadPrograms(filename string) error {
+	file, err := os.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("無法讀取 programs.json: %w", err)
+		return err
 	}
+
 	programs = make(map[string]Program)
-	err = json.Unmarshal(data, &programs)
+	err = json.Unmarshal(file, &programs)
 	if err != nil {
 		return fmt.Errorf("無法解析 programs.json: %w", err)
 	}
@@ -380,19 +381,28 @@ func normalizeCourseName(name string) string {
 }
 
 func main() {
-	if err := loadPrograms(); err != nil {
-		fmt.Printf("初始化學程定義失敗: %v\n", err)
+	// 1. 處理 Port：優先讀取環境變數 PORT，若無則預設為 10000 (Render 常用) 或 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "10000"
+	}
+
+	// 2. 讀取 programs.json (假設你在 init 或 main 中讀取)
+	// 如果你依照之前的建議使用 "cd backend && ./main" 啟動
+	// 程式就能直接透過 "programs.json" 讀取到檔案
+	err := loadPrograms("programs.json")
+	if err != nil {
+		fmt.Printf("初始化失敗: %v\n", err)
 		os.Exit(1)
 	}
 
-	router := mux.NewRouter()
+	r := mux.NewRouter()
+	// ... 你的路由設定 ...
 
-	// API 路由
-	router.HandleFunc("/api/programs", getPrograms).Methods("GET")
-	router.HandleFunc("/api/check", checkProgramsHandler).Methods("POST", "OPTIONS") // 允許 POST 和 OPTIONS
-
-	fmt.Println("Go 後端服務已啟動，監聽於 :8080...")
-	// 注意：這裡使用 8080 端口。前端的 Vite 預設使用 5173 端口。
-	// 在實際部署時，您可能需要使用 Nginx/Caddy 等來作為反向代理。
-	http.ListenAndServe(":8080", router)
+	// 3. 啟動伺服器：務必監聽 "0.0.0.0"
+	fmt.Printf("伺服器已啟動於 Port %s...\n", port)
+	err = http.ListenAndServe(":"+port, r)
+	if err != nil {
+		fmt.Printf("伺服器啟動失敗: %v\n", err)
+	}
 }
