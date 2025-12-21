@@ -306,6 +306,13 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 
 // --- HTTP 處理函式 ---
 
+// 用於防止休眠的健康檢查
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
 // 獲取學程列表
 func getPrograms(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -415,6 +422,7 @@ func main() {
 	r := mux.NewRouter()
 	// ... 你的路由設定 ...
 
+	r.HandleFunc("/healthcheck", healthCheckHandler).Methods("GET")
 	r.HandleFunc("/api/programs", getPrograms).Methods("GET")
 	r.HandleFunc("/api/check", checkProgramsHandler).Methods("POST", "OPTIONS")
 
