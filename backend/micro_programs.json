@@ -26,7 +26,7 @@
         "humanities_english": {
             "name": "人文學英語微學程",
             "min_credits": 8.0,
-            "description": "任選文學院歷年或未來開設之英語課程8學分，且至多含一門通識課程（僅供檢核113學年度之前課程）",
+            "description": "任選文學院歷年或未來開設之英語課程8學分（僅供檢核113學年度之前課程）",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -188,7 +188,12 @@
         "body_gender_medical_care": {
             "name": "身體、性別與醫療微學程",
             "min_credits": 9.0,
-            "description": "至少修滿 9 學分（至多含一門通識課程）",
+            "description": "至少修滿 9 學分",
+            "general_education_courses": [
+                "中國醫學與養生文化",
+                "美國運動史",
+                "近代中國的性別知識建構"
+            ],
             "requirements": [
                 {
                     "category": "選修課程",
@@ -199,13 +204,7 @@
                         "近代中國婦女史",
                         "性別與近代西方世界的形成",
                         "明清身體與情緒專題",
-                        "近代歐洲身體與文化史專題"
-                    ]
-                },
-                {
-                    "category": "通識課程",
-                    "max_count": 1,
-                    "courses": [
+                        "近代歐洲身體與文化史專題",
                         "中國醫學與養生文化",
                         "美國運動史",
                         "近代中國的性別知識建構"
@@ -216,7 +215,10 @@
         "migrant_ocean_international_intractive": {
             "name": "移民、海洋與國際互動微學程",
             "min_credits": 9.0,
-            "description": "至少修滿 9 學分（必修 3 + 選修 6，必修至多兩門，至多含一門通識課程）",
+            "description": "至少修滿 9 學分（必修 3 + 選修 6，必修至多兩門）",
+            "general_education_courses": [
+                "西方眼中的中國與臺灣"
+            ],
             "requirements": [
                 {
                     "category": "區域史（必修，Min 1 門，Max 2 門）",
@@ -244,13 +246,7 @@
                         "全球宗教改革專題",
                         "近現代歷史中的人群移動專題",
                         "歷史與記憶專題",
-                        "清代海洋貿易史專題"
-                    ]
-                },
-                {
-                    "category": "通識課程",
-                    "max_count": 1,
-                    "courses": [
+                        "清代海洋貿易史專題",
                         "西方眼中的中國與臺灣"
                     ]
                 }
@@ -259,7 +255,12 @@
         "religion_interdisciplinary_communication": {
             "name": "宗教跨域交流微學程",
             "min_credits": 9.0,
-            "description": "至少修滿 9 學分（至多含一門通識課程）",
+            "description": "至少修滿 9 學分",
+            "general_education_courses": [
+                "解密生命樹：基督宗教傳統的跨時空之旅",
+                "宗教朝聖與靈性旅遊",
+                "臺灣的時空旅行"
+            ],
             "requirements": [
                 {
                     "category": "選修課程",
@@ -271,13 +272,7 @@
                         "全球宗教改革專題",
                         "宗教與現代中國專題",
                         "基督宗教與近現代東亞世界",
-                        "基督宗教與近現代中國專題"
-                    ]
-                },
-                {
-                    "category": "通識課程",
-                    "max_count": 1,
-                    "courses": [
+                        "基督宗教與近現代中國專題",
                         "解密生命樹：基督宗教傳統的跨時空之旅",
                         "宗教朝聖與靈性旅遊",
                         "臺灣的時空旅行"
@@ -288,7 +283,12 @@
         "folk_solcial_culture_assets": {
             "name": "常民、社會與文化資產微學程",
             "min_credits": 9.0,
-            "description": "至少修滿 9 學分（至多含一門通識課程）",
+            "description": "至少修滿 9 學分",
+            "general_education_courses": [
+                "古代希臘的歷史與文化",
+                "認識故宮名畫",
+                "風土、餐桌與台灣史"
+            ],
             "requirements": [
                 {
                     "category": "選修課程",
@@ -302,13 +302,7 @@
                         "台灣近代社會文化史",
                         "明清日常生活史專題",
                         "美術與近代中國專題",
-                        "史蹟與文化資產專題"
-                    ]
-                },
-                {
-                    "category": "通識課程",
-                    "max_count": 1,
-                    "courses": [
+                        "史蹟與文化資產專題",
                         "古代希臘的歷史與文化",
                         "認識故宮名畫",
                         "風土、餐桌與台灣史"
@@ -319,7 +313,13 @@
         "taiwanese_history_society": {
             "name": "台灣歷史與社會微學程",
             "min_credits": 8.0,
-            "description": "至少修滿 8 學分（至多含一門通識課程）",
+            "description": "至少修滿 8 學分",
+            "general_education_courses": [
+                "近代臺灣歷史與人物",
+                "自我．身體．文化",
+                "台灣近現代社會文化史",
+                "戰後台灣史與國際關係"
+            ],
             "requirements": [
                 {
                     "category": "選修課程",
@@ -335,17 +335,61 @@
                         "近代初期史料解讀與數位工具",
                         "台灣近代政治經濟史專題研究",
                         "台灣政治經濟發展與美國政策（一）",
-                        "台灣政治經濟發展與美國政策（二）"
-                    ]
-                },
-                {
-                    "category": "通識課程",
-                    "max_count": 1,
-                    "courses": [
+                        "台灣政治經濟發展與美國政策（二）",
                         "近代臺灣歷史與人物",
                         "自我．身體．文化",
                         "台灣近現代社會文化史",
                         "戰後台灣史與國際關係"
+                    ]
+                }
+            ]
+        },
+        "narrativity_creativity": {
+            "name": "敘事與創造力微學程",
+            "min_credits": 9.0,
+            "description": "至少修滿 9 學分（基礎與應用課程二類各至少修習一科）",
+            "requirements": [
+                {
+                    "category": "敘事力課程（基礎）",
+                    "min_count": 1,
+                    "courses": [
+                        "俗文學概論",
+                        "古典小說選讀",
+                        "晚清小說",
+                        "中國佛教文學",
+                        "中國道教文學"
+                    ]
+                },
+                {
+                    "category": "創造力課程（應用）",
+                    "min_count": 1,
+                    "courses": [
+                        "神話、圖像與心靈專題",
+                        "台灣地方戲曲概說",
+                        "民俗與文學",
+                        "書法",
+                        "古文字與古代史"
+                    ]
+                }
+            ]
+        },
+        "ancient_canon_contemporary_interpretations": {
+            "name": "古代經典與當代闡釋微學程",
+            "min_credits": 9.0,
+            "description": "至少修滿 9 學分",
+            "requirements": [
+                {
+                    "category": "選修課程",
+                    "courses": [
+                        "左傳",
+                        "論語",
+                        "孟子",
+                        "學庸",
+                        "書經(尚書)",
+                        "禮記",
+                        "易經(周易)",
+                        "老子",
+                        "莊子"
                     ]
                 }
             ]
@@ -454,7 +498,7 @@
         "business_analytics": {
             "name": "商業分析微學程",
             "min_credits": 9.0,
-            "description": "至少修滿 9 學分，另需先修「經濟學」一學年",
+            "description": "至少修滿 9 學分，另需先修畢「經濟學」一學年",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -891,6 +935,9 @@
             "name": "德語文化微學程",
             "min_credits": 10.0,
             "description": "至少修滿 10 學分（必修 4 + 通識或選修 6）",
+            "general_education_courses": [
+                "德語區現代藝術賞析"
+            ],
             "requirements": [
                 {
                     "category": "核心必修課程",
@@ -1025,7 +1072,134 @@
             ]
         }
     },
-    "法學院": {},
+    "法學院": {
+        "environment_law": {
+            "name": "環境與法律微學程",
+            "min_credits": 9.0,
+            "description": "至少修滿 9 學分（必修 4 + 選修 5）",
+            "requirements": [
+                {
+                    "category": "必修課程",
+                    "min_credits": 4.0,
+                    "courses": [
+                        "環境法",
+                        "土地、環境與法律"
+                    ]
+                },
+                {
+                    "category": "選修課程",
+                    "min_credits": 5.0,
+                    "courses": [
+                        "氣候變遷與法律",
+                        "國際環境法",
+                        "國際海洋法",
+                        "環境法—環境責任論",
+                        "環境權與環境正義",
+                        "環境保護法專題研究",
+                        "再生能源法律問題研究",
+                        "永續、社會與治理—ESG的法制挑戰",
+                        "科技、社會與爭議",
+                        "社會理論中的全球環境：經濟、政治與生態"
+                    ]
+                }
+            ]
+        },
+        "family_law": {
+            "name": "家事法專業微學程",
+            "min_credits": 12.0,
+            "description": "至少修滿 12 學分（必修 5 + 選修 7）",
+            "requirements": [
+                {
+                    "category": "必修課程",
+                    "min_credits": 5.0,
+                    "courses": [
+                        "身分法",
+                        "家事事件法"
+                    ]
+                },
+                {
+                    "category": "選修課程",
+                    "min_credits": 7.0,
+                    "courses": [
+                        "家庭暴力防治法",
+                        "兒童及少年福利與權益保障法",
+                        "老人福利法",
+                        "婚姻與家庭法",
+                        "繼承法",
+                        "財產法",
+                        "民法總則"
+                    ]
+                }
+            ]
+        },
+        "civil_contract_litigation_practice": {
+            "name": "民事契約與訴訟實務微學程",
+            "min_credits": 12.0,
+            "description": "至少修滿 12 學分（必修 5 + 選修 7）",
+            "requirements": [
+                {
+                    "category": "必修課程",
+                    "min_credits": 5.0,
+                    "courses": [
+                        "民事訴訟法(二)",
+                        "契約法"
+                    ]
+                },
+                {
+                    "category": "選修課程",
+                    "min_credits": 7.0,
+                    "courses": [
+                        "消費者保護法",
+                        "強制執行法與破產法",
+                        "物權法實例研習",
+                        "財產法實例研習"
+                    ]
+                }
+            ]
+        },
+        "intellectual_property_business": {
+            "name": "智財商務微學程",
+            "min_credits": 8.0,
+            "description": "至少修滿 8 學分（基礎、進階、應用科目各至少一門）",
+            "requirements": [
+                {
+                    "category": "基礎課程",
+                    "min_count": 1,
+                    "courses": [
+                        "智慧財產權法總論",
+                        "個人資料保護法",
+                        "國際貿易法",
+                        "國際商事法",
+                        "公平交易法"
+                    ]
+                },
+                {
+                    "category": "進階課程",
+                    "min_count": 1,
+                    "courses": [
+                        "專利法",
+                        "商標法",
+                        "著作權法",
+                        "證券交易法",
+                        "銀行法",
+                        "信託法"
+                    ]
+                },
+                {
+                    "category": "應用課程",
+                    "min_count": 1,
+                    "courses": [
+                        "國際智慧財產權法專題研究",
+                        "智慧財產重要判決研析",
+                        "智慧財產權法專題研究",
+                        "金融科技創新與監管政策專題",
+                        "公司治理與ESG",
+                        "電子商務與網路法"
+                    ]
+                }
+            ]
+        }
+    },
     "理學院": {
         "quantum_computation": {
             "name": "量子計算微學程",
@@ -1323,6 +1497,42 @@
                 }
             ]
         },
+        "global_development_partnership": {
+            "name": "全球發展與夥伴關係微學程",
+            "min_credits": 9.0,
+            "description": "至少修滿 9 學分（基礎 3 + 進階或應用 6）",
+            "general_education_courses": [
+                "環視全球—挑戰國際視野",
+                "移民與文化的十個關鍵字"
+            ],
+            "requirements": [
+                {
+                    "category": "基礎課程",
+                    "min_credits": 3.0,
+                    "courses": [
+                        "環視全球—挑戰國際視野",
+                        "永續發展導論",
+                        "移民與文化的十個關鍵字",
+                        "創新與全球發展"
+                    ]
+                },
+                {
+                    "category": "進階或應用課程",
+                    "min_credits": 6.0,
+                    "courses": [
+                        "國際政治經濟學",
+                        "國際發展研究",
+                        "全球環境治理",
+                        "環境外交",
+                        "多元文化與移民政治",
+                        "公共管理及永續發展",
+                        "國際永續發展專題",
+                        "專題一：人類世與地球政治",
+                        "專題二：移民與全球化"
+                    ]
+                }
+            ]
+        },
         "china_studies": {
             "name": "中國研究微學程",
             "min_credits": 9.0,
@@ -1347,10 +1557,131 @@
                     ]
                 }
             ]
+        },
+        "southeast_asian_area_studies": {
+            "name": "東南亞區域研究微學程",
+            "min_credits": 9.0,
+            "description": "至少修滿 9 學分（基礎 3 + 核心 6，同一名老師開設課程至多兩門）",
+            "general_education_courses": [
+                "東南亞發展與治理",
+                "東南亞社會與人文"
+            ],
+            "requirements": [
+                {
+                    "category": "基礎課程",
+                    "min_credits": 3.0,
+                    "courses": [
+                        "政治學",
+                        "東南亞發展與治理(楊昊)",
+                        "東南亞政府與政治(孫采薇)",
+                        "東南亞社會與人文(楊昊)"
+                    ]
+                },
+                {
+                    "category": "進階或應用課程",
+                    "min_credits": 6.0,
+                    "courses": [
+                        "東南亞區域研究(孫采薇)",
+                        "東南亞國際關係專題(楊昊)",
+                        "中國與東南亞政經發展(楊昊)",
+                        "東南亞抵抗政治(楊昊)"
+                    ]
+                }
+            ]
+        },
+        "russia_central_east_europe": {
+            "name": "俄羅斯與中東歐微學程",
+            "min_credits": 8.0,
+            "description": "至少修滿 8 學分（基礎 2 + 進階核心 6）",
+            "requirements": [
+                {
+                    "category": "基礎課程",
+                    "min_credits": 2.0,
+                    "courses": [
+                        "俄國現勢"
+                    ]
+                },
+                {
+                    "category": "核心課程",
+                    "min_credits": 6.0,
+                    "courses": [
+                        "區域研究-俄國與東歐國際關係",
+                        "俄國經濟",
+                        "中東歐文化與社會"
+                    ]
+                }
+            ]
         }
     },
-    "教育學院": {},
-    "創新國際學院": {},
+    "教育學院": {
+        "instructional_media_technology": {
+            "name": "教學媒體與科技微學程",
+            "min_credits": 8.0,
+            "description": "至少修滿 8 學分",
+            "requirements": [
+                {
+                    "category": "認列範疇",
+                    "courses": [
+                        "教學媒體與運用",
+                        "資訊融入教與學",
+                        "數位學習",
+                        "知識管理系統與技術"
+                    ]
+                }
+            ]
+        },
+        "teenager_psychology_learning_counseling_design": {
+            "name": "青少年心理、學習與輔導設計微學程",
+            "min_credits": 8.0,
+            "description": "至少修滿 8 學分",
+            "requirements": [
+                {
+                    "category": "認列範疇",
+                    "courses": [
+                        "青少年心理學",
+                        "合作學習",
+                        "學習輔導",
+                        "個案研究"
+                    ]
+                }
+            ]
+        }
+    },
+    "創新國際學院": {
+        "EMI_AI_innovative_application": {
+            "name": "全英語人工智慧創新應用微學程",
+            "min_credits": 12.0,
+            "description": "至少修滿 12 學分（基礎 3 + 進階 6 + 應用 3）",
+            "requirements": [
+                {
+                    "category": "基礎課程",
+                    "min_credits": 3.0,
+                    "courses": [
+                        "資料科學",
+                        "AI 導論"
+                    ]
+                },
+                {
+                    "category": "進階課程",
+                    "min_credits": 6.0,
+                    "courses": [
+                        "計算思維與人工智慧",
+                        "計算思維與人工智慧應用導論",
+                        "人工智慧方法與工具",
+                        "深度學習：基礎及應用"
+                    ]
+                },
+                {
+                    "category": "應用課程",
+                    "min_credits": 3.0,
+                    "courses": [
+                        "生成式 AI 及資料科學應用實作",
+                        "生成式 AI 實作"
+                    ]
+                }
+            ]
+        }
+    },
     "資訊學院": {
         "information_security": {
             "name": "資訊安全微學程",
