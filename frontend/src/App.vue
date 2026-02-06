@@ -231,7 +231,7 @@ const safeCheckResults = computed(() => {
             <div class="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
                 <!-- 學院選擇下拉選單 -->
                 <div class="w-full sm:w-1/2">
-                    <label for="collegeSelect" class="block text-sm font-medium text-gray-700 mb-1">選擇設置單位：</label>
+                    <label for="collegeSelect" class="block text-sm font-medium text-gray-700 mb-1">選擇設置單位或所屬學院：</label>
                     <select id="collegeSelect" v-model="selectedCollege"
                         class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option v-for="collegeName in sortedCollegeNames" :key="collegeName" :value="collegeName">{{
@@ -253,6 +253,10 @@ const safeCheckResults = computed(() => {
                     </label>
                 </div>
             </div>
+
+            <p v-if="selectedProgramType === 'credit'" class="text-sm text-gray-500 mb-4">
+                註：學分學程認列科目至少應有三分之一學分數不屬於原學系、所之專業必修科目（此檢核項目尚未建置，請使用者自行確認）
+            </p>
 
             <p v-if="selectedProgramType === 'micro'" class="text-sm text-gray-500 mb-4">
                 註：微學程所認列之通識課程以一門為限（以學分較多者計）
@@ -344,7 +348,13 @@ const safeCheckResults = computed(() => {
                                 </template>
                             </span>
                         </div>
-                        <p v-if="cat.requiredCount > 0 || cat.requiredCredits > 0" class="text-xs mt-1">狀態: <span class="font-semibold">{{ cat.isMet ? '已達成' : '未達成' }}</span>
+                        <div v-if="cat.limitExceeded" class="text-xs font-bold text-amber-600 mt-1 flex items-center">
+                            <span class="mr-1">⚠️</span>
+                            {{ cat.exceededMessage }}
+                        </div>
+                        <p v-if="cat.requiredCount > 0 || cat.requiredCredits > 0" class="text-xs mt-1">狀態: <span
+                                class="font-semibold">{{
+                                cat.isMet ? '已達成' : '未達成' }}</span>
                         </p>
                         <div class="mt-2 text-xs text-gray-700">
                             <p class="font-semibold mb-1">已通過課程 ({{ cat.passedCourses.length }} 筆紀錄):</p>
@@ -352,8 +362,9 @@ const safeCheckResults = computed(() => {
                                 class="list-disc list-inside ml-2 max-h-32 overflow-y-auto custom-scrollbar bg-white p-2 rounded">
                                 <li v-if="cat.passedCourses.length === 0">無符合要求的已通過課程。</li>
                                 <li v-for="c in cat.passedCourses" :key="c.name + c.semester">{{ c.name }} ({{
-                                    c.credit.toFixed(1) }} 學分, {{
-                                        c.score }} 分)</li>
+                                    c.credit.toFixed(1) }} 學分<span v-if="c.isCapped"
+                                        class="text-amber-600 font-bold ml-1" title="此課程因超過上限而被調整學分">*</span>, {{
+                                            c.score }} 分)</li>
                             </ul>
                         </div>
                     </div>

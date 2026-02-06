@@ -23,6 +23,7 @@ type StudentCourse struct {
 	IsInProgress bool    `json:"isInProgress"`
 	IsPassed     bool    `json:"isPassed"`
 	Semester     string  `json:"semester"`
+	IsCapped     bool    `json:"isCapped"`
 }
 
 // 學程要求中的一個分類
@@ -30,6 +31,7 @@ type ProgramRequirement struct {
 	Category   string   `json:"category"`
 	MinCount   int      `json:"min_count"`
 	MaxCount   int      `json:"max_count"`
+	MaxCredits float64  `json:"max_credits"` // 該分類最高認列學分
 	MinCredits float64  `json:"min_credits"`
 	Courses    []string `json:"courses"` // 課程名稱列表
 }
@@ -52,6 +54,8 @@ type CategoryResult struct {
 	PassedCount     int             `json:"passedCount"`
 	IsMet           bool            `json:"isMet"`
 	PassedCourses   []StudentCourse `json:"passedCourses"`
+	LimitExceeded   bool            `json:"limitExceeded"`
+	ExceededMessage string          `json:"exceededMessage"`
 }
 
 // 最終檢核結果
@@ -290,9 +294,229 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		relevantPassed = filteredByInstructor
 	}
 
+	// 特殊處理：專利學分學程 (patent)
+	if programID == "patent" {
+		// 1. 處理學分上限 (Capping)
+		// 定義需要控管的群組
+		type CapGroup struct {
+			Courses []string
+			Limit   float64
+		}
+		capGroups := []CapGroup{
+			{[]string{"微積分"}, 2.0},
+			{[]string{"民法概要", "民法總則", "民法債編總論（一）", "民法債編總論（二）"}, 6.0},
+			{[]string{"普通物理學實驗", "普通物理學實驗（一）", "普通物理學實驗（二）"}, 2.0},
+		}
+
+		for _, group := range capGroups {
+			var groupCourses []*StudentCourse
+			// 找出屬於該群組的已通過課程 (使用指標以便修改 completedCourses 中的 Credit)
+			for i := range relevantPassed {
+				c := &relevantPassed[i]
+				for _, target := range group.Courses {
+					if c.Name == target {
+						groupCourses = append(groupCourses, c)
+						break
+					}
+				}
+			}
+
+			// 計算總學分並進行裁切
+			currentTotal := 0.0
+			for _, c := range groupCourses {
+				if currentTotal >= group.Limit {
+					c.Credit = 0 // 超出額度，不計分
+					c.IsCapped = true
+				} else if currentTotal+c.Credit > group.Limit {
+					// 部分採計
+					allowed := group.Limit - currentTotal
+					c.Credit = allowed
+					c.IsCapped = true
+					currentTotal += allowed
+				} else {
+					currentTotal += c.Credit
+				}
+			}
+		}
+
+		// 2. 處理 "民法概要" 的歸屬 (法學院 vs 商學院)
+		// 規則：可認列為法學院或商學院其一。
+		// 策略：若商學院分類中沒有其他課程，則將民法概要歸類為商學院；否則歸類為法學院。
+		hasCivilLawOverview := false
+		for _, c := range relevantPassed {
+			if c.Name == "民法概要" && c.Credit > 0 {
+				hasCivilLawOverview = true
+				break
+			}
+		}
+
+		if hasCivilLawOverview {
+			var businessReqIndex, lawReqIndex int = -1, -1
+			for i, req := range localRequirements {
+				if req.Category == "商學院" {
+					businessReqIndex = i
+				} else if req.Category == "法學院" {
+					lawReqIndex = i
+				}
+			}
+
+			if businessReqIndex != -1 && lawReqIndex != -1 {
+				// 檢查商學院是否有 "民法概要" 以外的合格課程
+				businessHasOther := false
+				for _, c := range relevantPassed {
+					if c.Name == "民法概要" {
+						continue
+					}
+					for _, target := range localRequirements[businessReqIndex].Courses {
+						if c.Name == target {
+							businessHasOther = true
+							break
+						}
+					}
+					if businessHasOther {
+						break
+					}
+				}
+
+				// 若商學院有其他課程，則民法概要歸法學院 (從商學院移除)；反之歸商學院 (從法學院移除)
+				targetToRemoveIndex := businessReqIndex
+				if !businessHasOther {
+					targetToRemoveIndex = lawReqIndex
+				}
+
+				// 執行移除
+				newCourses := []string{}
+				for _, c := range localRequirements[targetToRemoveIndex].Courses {
+					if c != "民法概要" {
+						newCourses = append(newCourses, c)
+					}
+				}
+				localRequirements[targetToRemoveIndex].Courses = newCourses
+			}
+		}
+	}
+
+	// 特殊處理：金融科技專長學程 (fintech)
+	if programID == "fintech" {
+		// Rule 2: 計算機概論/計算機程式設計/計算機程式 三門課僅能擇一門認列
+		compIntroGroup := []string{"計算機概論", "計算機程式設計", "計算機程式"}
+		var bestCompIntro StudentCourse
+		foundCompIntro := false
+		var otherCourses []StudentCourse
+
+		for _, c := range relevantPassed {
+			isCompIntro := false
+			for _, name := range compIntroGroup {
+				if c.Name == name {
+					isCompIntro = true
+					break
+				}
+			}
+			if isCompIntro {
+				if !foundCompIntro || c.Credit > bestCompIntro.Credit {
+					bestCompIntro = c
+					foundCompIntro = true
+				}
+			} else {
+				otherCourses = append(otherCourses, c)
+			}
+		}
+		relevantPassed = otherCourses
+		if foundCompIntro {
+			relevantPassed = append(relevantPassed, bestCompIntro)
+		}
+
+		// Rule 3: 5 specific courses overlap A and C. Pick one category.
+		overlapNames := map[string]bool{
+			"機器學習與人工智慧個案實作":       true,
+			"商業資料分析基礎：Python （一）": true,
+			"商業資料分析：Python（1）":    true,
+			"程式設計與統計軟體(實務)":       true,
+			"用Python學財務計量":        true,
+		}
+
+		idxA, idxB, idxC := -1, -1, -1
+		for i, req := range localRequirements {
+			if strings.Contains(req.Category, "群A") {
+				idxA = i
+			}
+			if strings.Contains(req.Category, "群B") {
+				idxB = i
+			}
+			if strings.Contains(req.Category, "選修C") {
+				idxC = i
+			}
+		}
+
+		if idxA != -1 && idxB != -1 && idxC != -1 {
+			var passedPureA, passedPureB int
+			var passedOverlap []string
+
+			isInList := func(name string, list []string) bool {
+				for _, v := range list {
+					if v == name {
+						return true
+					}
+				}
+				return false
+			}
+
+			for _, c := range relevantPassed {
+				if overlapNames[c.Name] {
+					passedOverlap = append(passedOverlap, c.Name)
+				} else {
+					if isInList(c.Name, localRequirements[idxA].Courses) {
+						passedPureA++
+					}
+					if isInList(c.Name, localRequirements[idxB].Courses) {
+						passedPureB++
+					}
+				}
+			}
+
+			assignedToA := []string{}
+			assignedToC := []string{}
+			currentA := passedPureA
+			currentB := passedPureB
+
+			for _, name := range passedOverlap {
+				// Priority: Meet A min count (1) -> Meet A+B min count (3) -> Assign to C
+				if currentA < 1 {
+					assignedToA = append(assignedToA, name)
+					currentA++
+				} else if (currentA + currentB) < 3 {
+					assignedToA = append(assignedToA, name)
+					currentA++
+				} else {
+					assignedToC = append(assignedToC, name)
+				}
+			}
+
+			// Modify localRequirements to enforce assignment
+			newCoursesA := []string{}
+			for _, name := range localRequirements[idxA].Courses {
+				if !overlapNames[name] {
+					newCoursesA = append(newCoursesA, name)
+				}
+			}
+			newCoursesA = append(newCoursesA, assignedToA...)
+			localRequirements[idxA].Courses = newCoursesA
+
+			newCoursesC := []string{}
+			for _, name := range localRequirements[idxC].Courses {
+				if !overlapNames[name] {
+					newCoursesC = append(newCoursesC, name)
+				}
+			}
+			newCoursesC = append(newCoursesC, assignedToC...)
+			localRequirements[idxC].Courses = newCoursesC
+		}
+	}
+
 	// 處理通識課程：若超過一門，僅保留學分最高者
 	var gePassed []StudentCourse
 	var otherPassed []StudentCourse
+	geLimitExceeded := false
 	for _, c := range relevantPassed {
 		if geCourseNames[c.Name] {
 			gePassed = append(gePassed, c)
@@ -304,6 +528,7 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		sort.Slice(gePassed, func(i, j int) bool {
 			return gePassed[i].Credit > gePassed[j].Credit
 		})
+		geLimitExceeded = true
 		gePassed = gePassed[:1]
 	}
 	completedCourses := append(otherPassed, gePassed...)
@@ -387,23 +612,68 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 			// 計算不重複的已通過課程門數
 			uniquePassedCourseNames := make(map[string]bool)
 			passedCreditsInCategory := 0.0
+			hasCappedCourse := false
 			for _, c := range passedInThisCategory {
 				uniquePassedCourseNames[c.Name] = true
 				passedCreditsInCategory += c.Credit
+				if c.IsCapped {
+					hasCappedCourse = true
+				}
 			}
 			passedCount := len(uniquePassedCourseNames)
 
-			// 計算該分類貢獻的有效學分 (處理 MaxCount)
+			// 計算該分類貢獻的有效學分 (處理 MaxCount 和 MaxCredits)
 			creditsContributingToTotal := 0.0
-			limit := len(passedInThisCategory)
-			if req.MaxCount > 0 && limit > req.MaxCount {
-				limit = req.MaxCount
-			}
-			for i := 0; i < limit; i++ {
-				creditsContributingToTotal += passedInThisCategory[i].Credit
+			countContributing := 0
+
+			limitExceeded := false
+			exceededMsg := ""
+
+			for _, c := range passedInThisCategory {
+				// Check MaxCount
+				if req.MaxCount > 0 && countContributing >= req.MaxCount {
+					limitExceeded = true
+					exceededMsg = fmt.Sprintf("超過門數上限 (至多 %d 門)", req.MaxCount)
+					break
+				}
+
+				// Check MaxCredits
+				addedCredit := c.Credit
+				if req.MaxCredits > 0 {
+					if creditsContributingToTotal+addedCredit > req.MaxCredits {
+						addedCredit = req.MaxCredits - creditsContributingToTotal
+						limitExceeded = true
+						exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
+					}
+				}
+
+				if addedCredit > 0 {
+					creditsContributingToTotal += addedCredit
+					countContributing++
+				} else if req.MaxCredits > 0 && creditsContributingToTotal >= req.MaxCredits {
+					limitExceeded = true
+					exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
+					break
+				}
 			}
 			if !strings.HasPrefix(req.Category, "先修課程") {
 				effectiveTotalCredits += creditsContributingToTotal
+			}
+
+			// 檢查是否有被 Patent 邏輯 Cap 的課程
+			if hasCappedCourse && !limitExceeded {
+				limitExceeded = true
+				exceededMsg = "部分課程因超過群組學分上限而不計分或減修"
+			}
+			// 檢查 MaxCount (針對總數)
+			if req.MaxCount > 0 && passedCount > req.MaxCount && !limitExceeded {
+				limitExceeded = true
+				exceededMsg = fmt.Sprintf("超過門數上限 (至多 %d 門)", req.MaxCount)
+			}
+			// 檢查 MaxCredits (針對總學分)
+			if req.MaxCredits > 0 && passedCreditsInCategory > req.MaxCredits && !limitExceeded {
+				limitExceeded = true
+				exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
 			}
 
 			// 判斷該分類是否符合要求 (MinCount, MinCredits)
@@ -427,11 +697,53 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 				PassedCount:     passedCount,
 				IsMet:           isMet,
 				PassedCourses:   passedInThisCategory,
+				LimitExceeded:   limitExceeded,
+				ExceededMessage: exceededMsg,
 			})
+		}
+
+		// 特殊處理：金融科技專長學程 (fintech) - Rule 1: A+B >= 3
+		if programID == "fintech" {
+			countA, countB := 0, 0
+			foundA, foundB := false, false
+			for _, res := range categoryResults {
+				if strings.Contains(res.Category, "群A") {
+					countA = res.PassedCount
+					foundA = true
+				}
+				if strings.Contains(res.Category, "群B") {
+					countB = res.PassedCount
+					foundB = true
+				}
+			}
+			if foundA && foundB && (countA+countB < 3) {
+				allCategoriesMet = false
+				categoryResults = append(categoryResults, CategoryResult{
+					Category:        "群A + 群B 總修習門數",
+					RequiredCount:   3,
+					PassedCount:     countA + countB,
+					IsMet:           false,
+					LimitExceeded:   false,
+					ExceededMessage: "群A與群B合計須至少修習 3 門",
+				})
+			}
 		}
 
 		// 更新總通過學分為計算後的有效學分
 		totalPassedCredits = effectiveTotalCredits
+
+		// 如果有通識課程超限，加入一個額外的分類結果顯示
+		if len(program.GeneralEducationCourses) > 0 && geLimitExceeded {
+			categoryResults = append(categoryResults, CategoryResult{
+				Category:        "通識課程 (全域限制)",
+				RequiredCount:   1, // 顯示限制
+				PassedCount:     len(gePassed),
+				IsMet:           true,
+				PassedCourses:   gePassed,
+				LimitExceeded:   true,
+				ExceededMessage: "通識課程認列以一門為限 (已自動採計最高分者)",
+			})
+		}
 	}
 
 	// 步驟 4: 總結
