@@ -4,15 +4,16 @@ import { ref, onMounted, computed } from 'vue';
 // --- 狀態管理 ---
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || ''; // Go 後端服務地址
 
-// 定義學院顯示順序
+// 定義設置單位顯示順序
 const COLLEGE_ORDER = [
     "文學院", "社會科學學院", "商學院", "傳播學院", "外國語文學院",
     "法學院", "理學院", "國際事務學院", "教育學院", "創新國際學院",
-    "資訊學院", "X實驗學院"
+    "資訊學院", "X實驗學院", "選舉研究中心", "創新與創造力研究中心", "文山共好USR計畫"
 ];
 
 const programsByCollege = ref({}); // 所有學程定義 (按學院分類)
 const selectedCollege = ref(''); // 目前選擇的學院
+const searchQuery = ref(''); // 搜尋關鍵字
 const selectedProgramType = ref('credit'); // 目前選擇的學程類型 ('credit' | 'micro')
 const selectedProgramIds = ref([]); // 選取的學程 ID 列表
 const studentFile = ref(null); // 上傳的 JSON 檔案
@@ -132,15 +133,57 @@ const sortedCollegeNames = computed(() => {
     });
 });
 
-const currentPrograms = computed(() => {
-    if (!selectedCollege.value) return {};
-    const programs = programsByCollege.value[selectedCollege.value] || {};
-
-    // 根據選擇的類型過濾學程
+const primaryPrograms = computed(() => {
+    const query = searchQuery.value.trim().toLowerCase();
     const filtered = {};
-    for (const [id, p] of Object.entries(programs)) {
-        if (p.type === selectedProgramType.value) {
-            filtered[id] = p;
+
+    if (query) {
+        // 搜尋模式：跨學院搜尋所有符合名稱的學程
+        for (const collegePrograms of Object.values(programsByCollege.value)) {
+            for (const [id, p] of Object.entries(collegePrograms)) {
+                const isTargetType = selectedProgramType.value === 'micro' ? p.type === 'micro' : p.type === 'credit';
+                if (isTargetType && p.name.toLowerCase().includes(query)) {
+                    filtered[id] = p;
+                }
+            }
+        }
+    } else {
+        // 一般模式：僅顯示所選學院的學程
+        if (!selectedCollege.value) return {};
+        const programs = programsByCollege.value[selectedCollege.value] || {};
+        for (const [id, p] of Object.entries(programs)) {
+            if (selectedProgramType.value === 'micro') {
+                if (p.type === 'micro') filtered[id] = p;
+            } else {
+                // credit mode: 一般學分學程
+                if (p.type === 'credit') filtered[id] = p;
+            }
+        }
+    }
+    return filtered;
+});
+
+const secondaryPrograms = computed(() => {
+    if (selectedProgramType.value !== 'credit') return {};
+
+    const query = searchQuery.value.trim().toLowerCase();
+    const filtered = {};
+
+    if (query) {
+        // 搜尋模式：跨學院搜尋所有符合名稱的專長學程
+        for (const collegePrograms of Object.values(programsByCollege.value)) {
+            for (const [id, p] of Object.entries(collegePrograms)) {
+                if (p.type === 'specialty' && p.name.toLowerCase().includes(query)) {
+                    filtered[id] = p;
+                }
+            }
+        }
+    } else {
+        // 一般模式：僅顯示所選學院的專長學程
+        if (!selectedCollege.value) return {};
+        const programs = programsByCollege.value[selectedCollege.value] || {};
+        for (const [id, p] of Object.entries(programs)) {
+            if (p.type === 'specialty') filtered[id] = p;
         }
     }
     return filtered;
@@ -228,9 +271,17 @@ const safeCheckResults = computed(() => {
                 選取欲檢核的學分學程 (可複選)
             </h2>
 
+            <!-- 搜尋列 -->
+            <div class="mb-4">
+                <label for="programSearch" class="block text-sm font-medium text-gray-700 mb-1">搜尋學程名稱 (跨學院搜尋)：</label>
+                <input type="text" id="programSearch" v-model="searchQuery"
+                    placeholder="輸入關鍵字..."
+                    class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+            </div>
+
             <div class="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
                 <!-- 學院選擇下拉選單 -->
-                <div class="w-full sm:w-1/2">
+                <div class="w-full sm:w-1/2" :class="{ 'opacity-50 pointer-events-none': searchQuery }">
                     <label for="collegeSelect" class="block text-sm font-medium text-gray-700 mb-1">選擇設置單位或所屬學院：</label>
                     <select id="collegeSelect" v-model="selectedCollege"
                         class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
@@ -262,14 +313,35 @@ const safeCheckResults = computed(() => {
                 註：微學程所認列之通識課程以一門為限（以學分較多者計）
             </p>
 
-            <div id="programCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div v-for="(program, id) in currentPrograms" :key="id" class="flex items-start">
-                    <input :id="id" type="checkbox" :value="id" v-model="selectedProgramIds"
-                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 shrink-0">
-                    <label :for="id" class="ml-3 text-sm font-medium text-gray-700">
-                        {{ program.name }}
-                        <p class="text-xs text-gray-500 mt-0.5">{{ program.description }}</p>
-                    </label>
+            <div id="programCheckboxes" class="space-y-6">
+                <!-- 一般學分學程 / 微學程 -->
+                <div>
+                    <h3 v-if="selectedProgramType === 'credit' && Object.keys(secondaryPrograms).length > 0" class="text-md font-bold text-gray-700 mb-3 border-l-4 border-indigo-500 pl-2">校級學分學程</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div v-for="(program, id) in primaryPrograms" :key="id" class="flex items-start">
+                            <input :id="id" type="checkbox" :value="id" v-model="selectedProgramIds"
+                                class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 shrink-0">
+                            <label :for="id" class="ml-3 text-sm font-medium text-gray-700">
+                                {{ program.name }}
+                                <p class="text-xs text-gray-500 mt-0.5">{{ program.description }}</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 專長學程 (僅在選擇學分學程時顯示) -->
+                <div v-if="Object.keys(secondaryPrograms).length > 0">
+                    <h3 class="text-md font-bold text-gray-700 mb-3 border-l-4 border-purple-500 pl-2">院級專長學程</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div v-for="(program, id) in secondaryPrograms" :key="id" class="flex items-start">
+                            <input :id="id" type="checkbox" :value="id" v-model="selectedProgramIds"
+                                class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 shrink-0">
+                            <label :for="id" class="ml-3 text-sm font-medium text-gray-700">
+                                {{ program.name }}
+                                <p class="text-xs text-gray-500 mt-0.5">{{ program.description }}</p>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div v-if="Object.keys(programsByCollege).length === 0" class="text-sm text-red-500">
                     載入學程清單中...
@@ -374,7 +446,7 @@ const safeCheckResults = computed(() => {
                     </div>
 
                     <!-- 平均成績檢核區塊 (僅針對特定學程顯示) -->
-                    <div v-if="result.avgScoreRequired" class="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <div v-if="result.avgScoreRequired && result.totalCreditsMet" class="mb-4 p-3 bg-white rounded-lg border border-gray-200">
                         <h4 class="text-md font-semibold text-gray-800 mb-2">認列課程平均成績檢核</h4>
                         <div class="flex justify-between text-sm">
                             <span class="font-medium">認列課程平均成績:</span>

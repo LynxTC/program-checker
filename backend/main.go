@@ -127,7 +127,7 @@ func loadPrograms() error {
 	files := map[string]string{
 		"micro_programs.json":              "micro",
 		"credit_programs.json":             "credit",
-		"commerce_specialty_programs.json": "credit",
+		"commerce_specialty_programs.json": "specialty",
 	}
 
 	for filename, pType := range files {
