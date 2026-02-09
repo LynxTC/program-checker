@@ -70,6 +70,10 @@ type CheckResult struct {
 	CategoryResults    []CategoryResult `json:"categoryResults"`
 	InProgressCourses  []StudentCourse  `json:"inProgressCourses"`
 	ProgramDescription string           `json:"programDescription"`
+	AvgScoreRequired   bool             `json:"avgScoreRequired"`  // 是否需要檢核平均成績
+	AvgScore           string           `json:"avgScore"`          // 平均成績
+	AvgScoreMet        bool             `json:"avgScoreMet"`       // 平均成績是否達標
+	AvgScoreThreshold  string           `json:"avgScoreThreshold"` // 平均成績門檻
 }
 
 // 輔助結構：用於匹配單一學年/學期的紀錄
@@ -311,6 +315,27 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 			}
 		}
 		relevantPassed = filteredByInstructor
+	}
+
+	// 特殊處理：CFA核心學程 - 特定先修課程即使無成績也視為已修
+	if programID == "CFA" {
+		specialCourses := map[string]bool{
+			"中級會計學（二）": true,
+			"投資學":      true,
+			"商事法":      true,
+			"民法概要":     true,
+		}
+
+		var newInProgress []StudentCourse
+		for _, c := range inProgressCourses {
+			if specialCourses[c.Name] {
+				c.IsPassed = true
+				relevantPassed = append(relevantPassed, c)
+			} else {
+				newInProgress = append(newInProgress, c)
+			}
+		}
+		inProgressCourses = newInProgress
 	}
 
 	// 特殊處理：專利學分學程 (patent)
@@ -560,6 +585,12 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 
 	// 特殊處理：管理會計專業學程 (management_accounting)
 	isManagementAccounting := programID == "management_accounting"
+
+	// 定義平均成績相關變數 (提升作用域以供最後回傳使用)
+	avgScoreRequired := false
+	avgScoreStr := "0.0"
+	avgScoreMet := false
+	avgScoreThreshold := ""
 
 	if isManagementAccounting {
 		// 規則：若「經濟學」修習未達 6 學分，則不採計（以 0 學分計）
@@ -865,8 +896,197 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 			}
 		}
 
+		// 特殊處理：人力資源管理學程 (學士及碩士) - 程序課程三類總共要至少修兩門
+		if programID == "human_resource_management_undergraduate" || programID == "human_resource_management_master" {
+			targetCats := []string{"程序課程：管理類", "程序課程：勞工關係類", "程序課程：行為類"}
+			uniquePassed := make(map[string]bool)
+			foundAny := false
+
+			for _, res := range categoryResults {
+				for _, target := range targetCats {
+					if res.Category == target {
+						foundAny = true
+						for _, c := range res.PassedCourses {
+							uniquePassed[c.Name] = true
+						}
+					}
+				}
+			}
+
+			if foundAny {
+				count := len(uniquePassed)
+				isMet := count >= 2
+				msg := ""
+				if !isMet {
+					allCategoriesMet = false
+					msg = "程序課程三類（管理類、勞工關係類、行為類）總共須至少修習 2 門"
+				}
+
+				categoryResults = append(categoryResults, CategoryResult{
+					Category:        "程序課程總門數檢核",
+					RequiredCount:   2,
+					PassedCount:     count,
+					PassedCredits:   0,
+					IsMet:           isMet,
+					PassedCourses:   []StudentCourse{},
+					LimitExceeded:   false,
+					ExceededMessage: msg,
+				})
+			}
+		}
+
+		// 特殊處理：人力資源管理學程 (碩士班) - 若修習「組織行為專題研究」，需另修行為類程序課程
+		if programID == "human_resource_management_master" {
+			var reqCatIndex, behCatIndex int = -1, -1
+			for i, res := range categoryResults {
+				if res.Category == "必修：管理心理學" {
+					reqCatIndex = i
+				} else if res.Category == "程序課程：行為類" {
+					behCatIndex = i
+				}
+			}
+
+			if reqCatIndex != -1 {
+				hasTarget := false
+				var targetCredit float64
+				for _, c := range categoryResults[reqCatIndex].PassedCourses {
+					if c.Name == "組織行為專題研究" {
+						hasTarget = true
+						targetCredit = c.Credit
+						break
+					}
+				}
+
+				if hasTarget {
+					hasBehavioral := false
+					if behCatIndex != -1 && categoryResults[behCatIndex].PassedCount > 0 {
+						hasBehavioral = true
+					}
+
+					if !hasBehavioral {
+						// 移除該課程
+						newPassed := []StudentCourse{}
+						for _, c := range categoryResults[reqCatIndex].PassedCourses {
+							if c.Name != "組織行為專題研究" {
+								newPassed = append(newPassed, c)
+							}
+						}
+						categoryResults[reqCatIndex].PassedCourses = newPassed
+						categoryResults[reqCatIndex].PassedCount = len(newPassed)
+						categoryResults[reqCatIndex].PassedCredits -= targetCredit
+						effectiveTotalCredits -= targetCredit
+
+						if categoryResults[reqCatIndex].PassedCount < categoryResults[reqCatIndex].RequiredCount {
+							categoryResults[reqCatIndex].IsMet = false
+							allCategoriesMet = false
+							categoryResults[reqCatIndex].LimitExceeded = true
+							categoryResults[reqCatIndex].ExceededMessage = "修習「組織行為專題研究」須另修習至少一門行為類程序課程始得認列"
+						}
+					}
+				}
+			}
+		}
+
+		// 特殊處理：行銷學程 (學士班及碩士班) - 選修課程同性質群組僅可列計一門
+		if programID == "marketing_undergraduate" || programID == "marketing_master" {
+			// 定義同性質課程群組
+			restrictedGroups := [][]string{
+				{"公共關係管理", "公共關係概論", "公共關係理論", "公關管理專題－危機溝通"},
+				{"服務業行銷", "服務行銷管理"},
+				{"多變量分析", "多變量統計分析"},
+				{"財務行銷", "財務行銷實務專題"},
+				{"品牌行銷專題研究", "專題研究－品牌行銷"},
+			}
+
+			for i, res := range categoryResults {
+				if res.Category == "選修課程" {
+					// 建立課程名稱到群組索引的映射
+					courseToGroup := make(map[string]int)
+					for gIdx, group := range restrictedGroups {
+						for _, name := range group {
+							courseToGroup[name] = gIdx
+						}
+					}
+
+					usedGroups := make(map[int]bool)
+					var newPassed []StudentCourse
+					var newPassedCredits float64
+
+					// 假設已通過課程已按學分排序 (在前面的邏輯中已做)，直接遍歷
+					for _, c := range res.PassedCourses {
+						if gIdx, exists := courseToGroup[c.Name]; exists {
+							if !usedGroups[gIdx] {
+								usedGroups[gIdx] = true
+								newPassed = append(newPassed, c)
+								newPassedCredits += c.Credit
+							} else {
+								// 此群組已有一門被採計，此門課為重複性質，予以剔除
+								// 需從總有效學分中扣除
+								effectiveTotalCredits -= c.Credit
+							}
+						} else {
+							// 非限制群組課程，直接保留
+							newPassed = append(newPassed, c)
+							newPassedCredits += c.Credit
+						}
+					}
+
+					// 更新該分類結果
+					categoryResults[i].PassedCourses = newPassed
+					categoryResults[i].PassedCount = len(newPassed)
+					categoryResults[i].PassedCredits = newPassedCredits
+					categoryResults[i].IsMet = categoryResults[i].PassedCount >= categoryResults[i].RequiredCount
+					break
+				}
+			}
+		}
+
 		// 更新總通過學分為計算後的有效學分
 		totalPassedCredits = effectiveTotalCredits
+
+		// 特殊處理：行銷學程、CFA核心學程 - 認列學分分數平均須達 80 分，不動產財務與管理核心學程 - 認列學分分數平均須達 70 分
+		// 計算範圍：必修＆選修 (排除先修課程)
+
+		if programID == "marketing_undergraduate" || programID == "marketing_master" || programID == "CFA" || programID == "real_property_financial_management" {
+			avgScoreRequired = true
+			threshold := 80.0
+			if programID == "real_property_financial_management" {
+				threshold = 70.0
+			}
+			avgScoreThreshold = fmt.Sprintf("%g", threshold)
+
+			totalScoreCredit := 0.0
+			totalCreditForAvg := 0.0
+			uniqueCoursesForAvg := make(map[string]bool)
+
+			for _, res := range categoryResults {
+				// 排除先修課程
+				if strings.Contains(res.Category, "先修") {
+					continue
+				}
+				for _, c := range res.PassedCourses {
+					// 避免重複計算 (雖然不同分類通常不重疊，但保險起見)
+					key := c.Name + "-" + c.Semester
+					if !uniqueCoursesForAvg[key] {
+						uniqueCoursesForAvg[key] = true
+						// 解析成績
+						s, err := strconv.ParseFloat(c.Score, 64)
+						if err == nil {
+							totalScoreCredit += s * c.Credit
+							totalCreditForAvg += c.Credit
+						}
+					}
+				}
+			}
+
+			avg := 0.0
+			if totalCreditForAvg > 0 {
+				avg = totalScoreCredit / totalCreditForAvg
+			}
+			avgScoreStr = fmt.Sprintf("%.2f", avg)
+			// 需達標
+			avgScoreMet = avg >= threshold
+		}
 
 		// 如果有通識課程超限，加入一個額外的分類結果顯示
 		if len(program.GeneralEducationCourses) > 0 && geLimitExceeded {
@@ -890,6 +1110,11 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 	// 步驟 4: 總結
 	totalCreditsMet := totalPassedCredits >= program.MinCredits
 	isCompleted := totalCreditsMet && allCategoriesMet
+
+	// 若有平均成績要求且未達標，則視為未修畢
+	if avgScoreRequired && !avgScoreMet {
+		isCompleted = false
+	}
 
 	// 修正：確保 inProgressCourses 在沒有課程時是空切片 (為了解決前端 'null' 錯誤)
 	if inProgressCourses == nil {
@@ -917,6 +1142,10 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		CategoryResults:    categoryResults,
 		InProgressCourses:  inProgressCourses,
 		ProgramDescription: program.Description,
+		AvgScoreRequired:   avgScoreRequired,
+		AvgScore:           avgScoreStr,
+		AvgScoreMet:        avgScoreMet,
+		AvgScoreThreshold:  avgScoreThreshold,
 	}
 }
 

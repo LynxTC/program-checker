@@ -373,6 +373,19 @@ const safeCheckResults = computed(() => {
                         </div>
                     </div>
 
+                    <!-- 平均成績檢核區塊 (僅針對特定學程顯示) -->
+                    <div v-if="result.avgScoreRequired" class="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+                        <h4 class="text-md font-semibold text-gray-800 mb-2">認列課程平均成績檢核</h4>
+                        <div class="flex justify-between text-sm">
+                            <span class="font-medium">認列課程平均成績:</span>
+                            <span :class="result.avgScoreMet ? 'text-emerald-600 font-bold' : 'text-rose-600'">{{
+                                result.avgScore }} 分</span>
+                        </div>
+                        <p class="mt-2 text-xs" :class="result.avgScoreMet ? 'text-emerald-600' : 'text-rose-600'">
+                            {{ result.avgScoreMet ? `平均成績已達 ${result.avgScoreThreshold} 分標準。` : `平均成績未達 ${result.avgScoreThreshold} 分標準。` }}
+                        </p>
+                    </div>
+
                     <div v-if="result.inProgressCourses && result.inProgressCourses.length > 0"
                         class="mt-4 p-3 border border-yellow-400 bg-yellow-50 rounded-lg">
 
