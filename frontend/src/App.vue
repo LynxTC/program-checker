@@ -318,7 +318,7 @@ const safeCheckResults = computed(() => {
 
 <template>
     <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 sm:p-10">
-        <h1 class="text-3xl font-extrabold text-center text-blue-800 mb-2">政大 學程推薦＆檢核</h1>
+        <h1 class="text-3xl font-extrabold text-center text-blue-800 mb-2">政大 學程推薦＆檢核（Beta 版）</h1>
         <p class="text-gray-600 mb-6 border-b pb-4 text-center">只要把修過的課程資料上傳到系統，便能馬上給您與學程的匹配度還有修習程度，不再為了複雜的學程規定而頭痛</p>
 
         <div class="mb-8 p-4 border border-blue-200 bg-blue-50 rounded-lg">
