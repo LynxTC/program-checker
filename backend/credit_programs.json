@@ -369,9 +369,9 @@
     },
     "社會科學學院": {
         "PPESA": {
-            "name": "人文領袖榮譽學分學程 (PPESA)（113年起適用）",
+            "name": "人文領袖榮譽學分學程 (PPESA)",
             "min_credits": 19.0,
-            "description": "必修 4 + 群修 15，各學群至少一門",
+            "description": "必修 4 + 群修 15，各學群至少一門（113年起適用）",
             "requirements": [
                 {
                     "category": "必修課程",
