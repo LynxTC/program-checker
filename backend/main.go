@@ -100,6 +100,18 @@ type StudentDataWrapper []struct {
 	AcademicInfo AcademicInfo `json:"課業學習"`
 }
 
+// 推薦結果結構
+type Recommendation struct {
+	ProgramID           string  `json:"programID"`
+	ProgramName         string  `json:"programName"`
+	Type                string  `json:"type"`
+	TotalPassedCredits  float64 `json:"totalPassedCredits"`
+	MinCredits          float64 `json:"minCredits"`
+	PassedPrereqCredits float64 `json:"passedPrereqCredits"` // 新增：已修先修學分
+	CompletionRate      float64 `json:"completionRate"`
+	IsCompleted         bool    `json:"isCompleted"`
+}
+
 // --- 全局變數 ---
 var programs map[string]Program
 var programsByCollege map[string]map[string]Program
@@ -733,6 +745,23 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 			if req.MinCredits > 0 && passedCreditsInCategory < req.MinCredits {
 				isMet = false
 			}
+
+			// 若先修課程類別課程已修滿該列所有已列課程，將狀態視為已達成 (僅在無其他門數/學分規定時適用)
+			if strings.HasPrefix(req.Category, "先修課程") && len(req.Courses) > 0 {
+				// 若有學分或門數規定仍以規定為主，但沒有規定者再比照這個要求
+				if req.MinCount == 0 && req.MinCredits == 0 {
+					req.MinCount = len(req.Courses) // 將隱性要求轉換為顯性門數要求，以便前端正確顯示
+					allPassed := true
+					for _, courseName := range req.Courses {
+						if !uniquePassedCourseNames[courseName] {
+							allPassed = false
+							break
+						}
+					}
+					isMet = allPassed
+				}
+			}
+
 			if !isMet {
 				allCategoriesMet = false
 			}
@@ -1221,6 +1250,117 @@ func checkProgramsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(results)
 }
 
+// 處理學程推薦 (遍歷所有學程並回傳符合一定程度者)
+func recommendProgramsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// 1. 解析 multipart 表單
+	err := r.ParseMultipartForm(32 << 20) // 32MB
+	if err != nil {
+		http.Error(w, "解析表單失敗: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 2. 讀取學生 JSON 檔案
+	file, _, err := r.FormFile("student_json")
+	if err != nil {
+		http.Error(w, "讀取檔案失敗: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "讀取檔案內容失敗: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 3. 解析學生課程資料
+	studentCourses, err := loadStudentData(fileBytes)
+	if err != nil {
+		http.Error(w, "解析學生資料失敗: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 4. 遍歷所有學程進行檢核
+	var recommendations []Recommendation
+
+	for id, program := range programs {
+		result := checkProgramCompletion(id, studentCourses)
+
+		passed, _ := strconv.ParseFloat(result.TotalPassedCredits, 64)
+		min, _ := strconv.ParseFloat(result.MinRequiredCredits, 64)
+
+		// 計算先修課程學分 (用於加分與計算百分比，但不計入 TotalPassedCredits)
+		passedPrereq := 0.0
+		requiredPrereq := 0.0
+
+		for _, cat := range result.CategoryResults {
+			if strings.HasPrefix(cat.Category, "先修課程") {
+				passedPrereq += cat.PassedCredits
+				requiredPrereq += cat.RequiredCredits
+			}
+		}
+
+		// 計算完成度：(主學程已修 + 先修已修) / (主學程應修 + 先修應修)
+		totalPassed := passed + passedPrereq
+		totalRequired := min + requiredPrereq
+
+		rate := 0.0
+		if totalRequired > 0 {
+			rate = totalPassed / totalRequired
+		}
+
+		// 推薦門檻：完成度達 20% 以上 (避免僅修一門通識就推薦所有學程)
+		if rate >= 0.2 {
+			recommendations = append(recommendations, Recommendation{
+				ProgramID:           id,
+				ProgramName:         program.Name,
+				Type:                program.Type,
+				TotalPassedCredits:  passed,
+				MinCredits:          min,
+				PassedPrereqCredits: passedPrereq,
+				CompletionRate:      rate,
+				IsCompleted:         result.IsCompleted,
+			})
+		}
+	}
+
+	// 5. 排序：依完成度由高至低
+	sort.Slice(recommendations, func(i, j int) bool {
+		return recommendations[i].CompletionRate > recommendations[j].CompletionRate
+	})
+
+	// 6. 篩選前五名 (包含並列)
+	var topRecommendations []Recommendation
+	if len(recommendations) > 0 {
+		currentRank := 1
+		lastRate := recommendations[0].CompletionRate
+
+		for _, rec := range recommendations {
+			// 若完成度小於上一筆，則名次遞增
+			if rec.CompletionRate < lastRate {
+				currentRank++
+				lastRate = rec.CompletionRate
+			}
+
+			// 若名次已超過 5，則停止加入
+			if currentRank > 5 {
+				break
+			}
+
+			topRecommendations = append(topRecommendations, rec)
+		}
+	}
+
+	// 7. 回傳結果
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(topRecommendations)
+}
+
 // 輔助函式：標準化課程名稱，確保比對準確
 func normalizeCourseName(name string) string {
 	return strings.TrimSpace(name)
@@ -1264,6 +1404,7 @@ func main() {
 	r.HandleFunc("/healthcheck", healthCheckHandler).Methods("GET")
 	r.HandleFunc("/api/programs", getPrograms).Methods("GET")
 	r.HandleFunc("/api/check", checkProgramsHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/recommend", recommendProgramsHandler).Methods("POST", "OPTIONS")
 
 	// 3. 啟動伺服器：務必監聽 "0.0.0.0"
 	fmt.Printf("伺服器已啟動於 Port %s...\n", port)

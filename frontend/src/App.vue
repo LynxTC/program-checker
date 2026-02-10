@@ -23,6 +23,14 @@ const checkResults = ref([]); // 檢核結果列表
 const isChecking = ref(false); // 檢核按鈕 loading 狀態
 const showDownloadHelp = ref(false); // 是否顯示下載說明
 const showDisclaimerModal = ref(false); // 是否顯示免責聲明 Modal
+const recommendationResults = ref([]); // 推薦結果
+const isRecommending = ref(false); // 推薦分析 loading 狀態
+const hasRunRecommendation = ref(false); // 是否已執行過推薦
+const showPrivacyModal = ref(false); // 是否顯示隱私權政策 Modal
+const showTermsModal = ref(false); // 是否顯示服務條款 Modal
+const showContactModal = ref(false); // 是否顯示聯絡我們 Modal
+const activeTab = ref('recommendation'); // 當前顯示的頁籤 ('recommendation' | 'check')
+const notification = ref({ show: false, message: '', type: 'success', action: null }); // 通知狀態
 
 // --- 核心邏輯 ---
 
@@ -53,6 +61,8 @@ const handleFileChange = (event) => {
     const file = event.target.files[0];
     studentFile.value = file;
     checkResults.value = []; // 清空結果
+    recommendationResults.value = []; // 清空推薦結果
+    hasRunRecommendation.value = false;
 
     if (!file) {
         uploadStatus.value = '';
@@ -116,6 +126,63 @@ const executeCheck = async () => {
         alert(`檢核過程中發生錯誤: ${error.message}`);
     } finally {
         isChecking.value = false;
+    }
+};
+
+/**
+ * 額外功能: 執行學程推薦
+ */
+const executeRecommendation = async () => {
+    if (!studentFile.value) {
+        alert('請先上傳全人資料 JSON 檔案');
+        return;
+    }
+    
+    isRecommending.value = true;
+    hasRunRecommendation.value = false;
+    recommendationResults.value = [];
+
+    const formData = new FormData();
+    formData.append('student_json', studentFile.value);
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/recommend`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) throw new Error('推薦分析失敗');
+        recommendationResults.value = await response.json();
+        hasRunRecommendation.value = true;
+    } catch (error) {
+        console.error("推薦分析錯誤:", error);
+        alert('無法執行推薦分析');
+    } finally {
+        isRecommending.value = false;
+    }
+};
+
+let notificationTimeout = null;
+const showNotification = (message, type = 'success', action = null) => {
+    notification.value = { show: true, message, type, action };
+    if (notificationTimeout) clearTimeout(notificationTimeout);
+    notificationTimeout = setTimeout(() => {
+        notification.value.show = false;
+    }, 4000);
+};
+
+const addProgramToSelection = (id, name) => {
+    if (!selectedProgramIds.value.includes(id)) {
+        selectedProgramIds.value.push(id);
+        showNotification(`已加入「${name}」`, 'success', {
+            text: '前往學程檢核區',
+            handler: () => { activeTab.value = 'check'; notification.value.show = false; }
+        });
+    } else {
+        showNotification(`「${name}」已在清單中`, 'info', {
+            text: '前往學程檢核區',
+            handler: () => { activeTab.value = 'check'; notification.value.show = false; }
+        });
     }
 };
 
@@ -212,6 +279,22 @@ const selectedProgramsList = computed(() => {
     return list;
 });
 
+const rankedRecommendations = computed(() => {
+    const list = recommendationResults.value;
+    if (list.length === 0) return [];
+
+    let currentRank = 1;
+    let lastRate = list[0].completionRate;
+
+    return list.map((rec) => {
+        if (rec.completionRate < lastRate) {
+            currentRank++;
+            lastRate = rec.completionRate;
+        }
+        return { ...rec, rank: currentRank };
+    });
+});
+
 const removeProgram = (id) => {
     selectedProgramIds.value = selectedProgramIds.value.filter(pid => pid !== id);
 };
@@ -235,8 +318,8 @@ const safeCheckResults = computed(() => {
 
 <template>
     <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-xl p-6 sm:p-10">
-        <h1 class="text-3xl font-extrabold text-blue-800 mb-2">國立政治大學 學分學程 / 微學程修習檢核</h1>
-        <p class="text-gray-600 mb-6 border-b pb-4">上傳全人資料，選取欲檢核的學分學程/微學程，即可查看修習進度。</p>
+        <h1 class="text-3xl font-extrabold text-center text-blue-800 mb-2">政大 學程推薦＆檢核</h1>
+        <p class="text-gray-600 mb-6 border-b pb-4 text-center">只要把修過的課程資料上傳到系統，便能馬上給您與學程的匹配度還有修習程度，不再為了複雜的學程規定而頭痛</p>
 
         <div class="mb-8 p-4 border border-blue-200 bg-blue-50 rounded-lg">
             <h2 class="text-xl font-semibold text-blue-700 mb-3 flex items-center">
@@ -253,9 +336,9 @@ const safeCheckResults = computed(() => {
                 <p class="mb-1"><span class="font-bold">Step 1️⃣：</span>進入政大首頁並且登入 iNCCU</p>
                 <p class="mb-1"><span class="font-bold">Step 2️⃣：</span>點選「進入我的全人」</p>
                 <p class="mb-1"><span class="font-bold">Step 3️⃣：</span>下滑到底，在「相關連結」找到「資料格式化匯出」選項，進入後選擇「課業學習」後下載</p>
-                <p><span class="font-bold">Step 4️⃣：</span>得到熱騰騰的全人資料 JSON 檔案！</p>
+                <p><span class="font-bold">Step 4️⃣：</span>得到熱騰騰的🔥全人資料 JSON 檔案🔥！</p>
             </div>
-            <input type="file" id="jsonFile" accept=".json" @change="handleFileChange"
+            <input type="file" id="jsonFile" accept=".json" @change="handleFileChange" @click="$event.target.value = null"
                 class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition duration-150">
             <p id="uploadStatus" class="mt-2 text-sm" :class="{
                 'text-emerald-600': uploadStatus.includes('檔案已載入') || uploadStatus.includes('檢核完成'),
@@ -264,22 +347,128 @@ const safeCheckResults = computed(() => {
             }">{{ uploadStatus }}</p>
         </div>
 
+        <div class="flex items-center mb-6">
+            <div class="flex-grow border-t border-gray-300"></div>
+            <span class="flex-shrink mx-4 text-gray-600 font-medium text-center">
+                ⬇️ 可交由系統幫您推薦匹配的學程，或是直接自行選擇個別學程查看進度 ⬇️
+            </span>
+            <div class="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        <!-- 頁籤切換 -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button @click="activeTab = 'recommendation'"
+                class="flex-1 py-3 px-4 text-center font-medium text-sm focus:outline-none transition-colors duration-200 border-b-2"
+                :class="activeTab === 'recommendation' ? 'border-green-500 text-green-700 bg-green-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+                🔮 智慧學程推薦
+            </button>
+            <button @click="activeTab = 'check'"
+                class="flex-1 py-3 px-4 text-center font-medium text-sm focus:outline-none transition-colors duration-200 border-b-2"
+                :class="activeTab === 'check' ? 'border-green-500 text-green-700 bg-green-50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'">
+                ✏️ 學程檢核
+            </button>
+        </div>
+
+        <!-- 新增：學程推薦區塊 -->
+        <div v-if="activeTab === 'recommendation'" class="mb-8 p-4 border border-green-200 bg-green-50 rounded-lg">
+            <h2 class="text-xl font-semibold text-green-700 mb-3 flex items-center">
+                <span class="inline-flex items-center justify-center w-8 h-8 mr-3 bg-green-500 text-white text-lg font-bold rounded-full">A</span>
+                智慧學程推薦排行榜 (Top 5)
+            </h2>
+            <p class="text-sm text-gray-600 mb-4">
+                系統將比對您的修課紀錄與所有學程標準，推薦匹配度較高的學程供您參考，不讓您錯失任何一個學程通過的機會
+            </p>
+            
+            <button @click="executeRecommendation" :disabled="!studentFile || isRecommending"
+                class="mb-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                <span v-if="isRecommending" class="mr-2">
+                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </span>
+                {{ isRecommending ? '分析中...' : '啟動推薦分析' }}
+            </button>
+
+            <div v-if="hasRunRecommendation" class="space-y-3 mt-2">
+                <!-- 前往檢核區按鈕 (頂部) -->
+                <div class="mb-4 text-center">
+                    <button @click="activeTab = 'check'" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow transition duration-200 flex items-center justify-center mx-auto">
+                        前往學程檢核區查看詳情
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+
+                <div v-if="recommendationResults.length === 0" class="text-gray-500 text-sm italic">
+                    尚無符合推薦門檻的學程。
+                </div>
+                <div v-for="rec in rankedRecommendations" :key="rec.programID" 
+                     class="bg-white p-4 rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <!-- 排名徽章 -->
+                        <div class="flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full font-bold text-xl shadow-sm"
+                             :class="{
+                                 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300': rec.rank === 1,
+                                 'bg-gray-100 text-gray-600 border-2 border-gray-300': rec.rank === 2,
+                                 'bg-orange-100 text-orange-700 border-2 border-orange-300': rec.rank === 3,
+                                 'bg-green-50 text-green-600 border border-purple-200': rec.rank > 3
+                             }">
+                            {{ rec.rank }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800 text-lg">{{ rec.programName }}</div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs mr-2">{{ rec.type === 'micro' ? '微學程' : '學分學程' }}</span>
+                                已修 {{ rec.totalPassedCredits }} / {{ rec.minCredits }} 學分
+                                <span v-if="rec.passedPrereqCredits > 0" class="ml-2 text-indigo-600 font-medium text-xs">
+                                    (+ 先修 {{ rec.passedPrereqCredits }} 學分)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-green-600" :class="{
+                                'opacity-100': rec.rank === 1,
+                                'opacity-80': rec.rank === 2,
+                                'opacity-60': rec.rank === 3,
+                                'opacity-40': rec.rank === 4,
+                                'opacity-30': rec.rank >= 5
+                            }">{{ (rec.completionRate * 100).toFixed(0) }}%</div>
+                            <div class="text-xs text-gray-400">完成度</div>
+                        </div>
+                        <button @click="addProgramToSelection(rec.programID, rec.programName)" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-sm font-medium transition-colors">
+                            加入檢核
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 前往檢核區按鈕 -->
+                <div v-if="hasRunRecommendation" class="mt-6 text-center border-t border-purple-200 pt-4">
+                    <button @click="activeTab = 'check'" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow transition duration-200 flex items-center justify-center mx-auto">
+                        前往學程檢核區查看詳情
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'check'">
         <div class="mb-8 p-4 border border-green-200 bg-green-50 rounded-lg">
             <h2 class="text-xl font-semibold text-green-700 mb-4 flex items-center">
                 <span
-                    class="inline-flex items-center justify-center w-8 h-8 mr-3 bg-green-500 text-white text-lg font-bold rounded-full">2</span>
+                    class="inline-flex items-center justify-center w-8 h-8 mr-3 bg-green-500 text-white text-lg font-bold rounded-full">B</span>
                 選取欲檢核的學分學程 (可複選)
             </h2>
 
-            <!-- 搜尋列 -->
-            <div class="mb-4">
-                <label for="programSearch" class="block text-sm font-medium text-gray-700 mb-1">搜尋學程名稱 (跨學院搜尋)：</label>
-                <input type="text" id="programSearch" v-model="searchQuery"
-                    placeholder="輸入關鍵字..."
-                    class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-            </div>
+            <div class="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
+                <!-- 搜尋列 -->
+                <div class="w-full sm:w-1/2">
+                    <label for="programSearch" class="block text-sm font-medium text-gray-700 mb-1">搜尋學程名稱 (跨學院搜尋)：</label>
+                    <input type="text" id="programSearch" v-model="searchQuery"
+                        placeholder="輸入關鍵字..."
+                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                </div>
 
-            <div class="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
+                <div class="text-gray-500 font-bold shrink-0 self-center sm:self-auto sm:pt-8">或</div>
+
                 <!-- 學院選擇下拉選單 -->
                 <div class="w-full sm:w-1/2" :class="{ 'opacity-50 pointer-events-none': searchQuery }">
                     <label for="collegeSelect" class="block text-sm font-medium text-gray-700 mb-1">選擇設置單位或所屬學院：</label>
@@ -289,9 +478,10 @@ const safeCheckResults = computed(() => {
                             collegeName }}</option>
                     </select>
                 </div>
+            </div>
 
-                <!-- 學程類型選擇 (Radio Buttons) -->
-                <div class="flex items-center space-x-6 pb-2">
+            <!-- 學程類型選擇 (Radio Buttons) -->
+            <div class="flex items-center space-x-6 pb-2 mb-6">
                     <label class="inline-flex items-center cursor-pointer">
                         <input type="radio" value="credit" v-model="selectedProgramType"
                             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
@@ -302,7 +492,6 @@ const safeCheckResults = computed(() => {
                             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
                         <span class="ml-2 text-gray-700 font-medium">微學程</span>
                     </label>
-                </div>
             </div>
 
             <p v-if="selectedProgramType === 'credit'" class="text-sm text-gray-500 mb-4">
@@ -352,7 +541,7 @@ const safeCheckResults = computed(() => {
 
             <!-- 顯示已選擇的學程 -->
             <div v-if="selectedProgramsList.length > 0" class="mt-4 pt-4 border-t border-green-200">
-                <p class="text-sm font-bold text-green-800 mb-2">已選擇的學程（點擊可取消）：</p>
+                <p class="text-lg font-bold text-green-800 mb-2">已選擇的學程（點擊可取消）：</p>
                 <div class="flex flex-wrap gap-2">
                     <span v-for="p in selectedProgramsList" :key="p.id" @click="removeProgram(p.id)"
                         class="px-3 py-1 bg-white text-green-700 text-sm font-medium rounded-full border border-green-300 shadow-sm cursor-pointer hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors flex items-center group">
@@ -479,6 +668,7 @@ const safeCheckResults = computed(() => {
                 </div>
             </div>
         </div>
+        </div>
 
         <!-- 免責聲明 Modal -->
         <div v-if="showDisclaimerModal"
@@ -504,6 +694,141 @@ const safeCheckResults = computed(() => {
                 </div>
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+            <div class="flex justify-center space-x-4">
+                <button @click="showPrivacyModal = true" class="hover:text-indigo-600 transition-colors">隱私權政策</button>
+                <span class="text-gray-300">|</span>
+                <button @click="showTermsModal = true" class="hover:text-indigo-600 transition-colors">服務條款</button>
+            </div>
+            <p class="mb-2">&copy; {{ new Date().getFullYear() }} 政治大學學分學程修習檢核工具. Licensed under the MIT License.</p>
+        </footer>
+
+        <!-- Floating Contact Button -->
+        <button @click="showContactModal = true" 
+            class="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-transform transform hover:scale-110 flex items-center justify-center group" 
+            title="聯絡我們">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <span class="absolute right-full mr-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                聯絡我們
+            </span>
+        </button>
+
+        <!-- Contact Us Modal -->
+        <div v-if="showContactModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" @click.self="showContactModal = false">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[90vh] transform transition-all scale-100">
+                <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
+                    <h3 class="text-xl font-bold text-gray-800">聯絡我們</h3>
+                    <button @click="showContactModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                <div class="p-0 overflow-y-auto flex-grow bg-gray-50">
+                     <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfy53oPNPgDu_O1zwzWWjbbV4A3rn_6RA8FKwEsx8P9kv6r7A/viewform?embedded=true" class="w-full h-[80vh] sm:h-[70vh]" frameborder="0" marginheight="0" marginwidth="0">載入中…</iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- 隱私權政策 Modal -->
+        <div v-if="showPrivacyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" @click.self="showPrivacyModal = false">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] transform transition-all scale-100">
+                <div class="flex justify-between items-center p-6 sm:p-8 border-b flex-shrink-0">
+                    <h3 class="text-2xl font-bold text-gray-800">隱私權政策</h3>
+                    <button @click="showPrivacyModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                <div class="p-6 sm:p-8 overflow-y-auto">
+                    <div class="text-gray-600 space-y-4 leading-relaxed text-justify">
+                    <p>歡迎您使用「國立政治大學學程修習推薦暨檢核工具」（以下簡稱本工具）。本工具由恩吸吸呦學程檢核器開發團隊開發與維護。為了讓您能夠安心使用本工具的各項服務與資訊，特此向您說明本工具的隱私權保護政策，以保障您的權益，請您詳閱下列內容：</p>
+                    
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">一、隱私權保護政策的適用範圍</h4>
+                    <p>隱私權保護政策內容，包括本工具如何處理在您使用網站服務時收集到的個人識別資料。本隱私權保護政策不適用於本工具以外的相關連結網站，也不適用於非本工具所委託或參與管理的人員。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">二、個人資料的蒐集、處理及利用方式</h4>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>當您使用本工具進行學程檢核時，我們需要您上傳個人的全人資料 JSON 檔案。</li>
+                        <li><strong>資料不落地原則：</strong>您上傳的檔案僅會在伺服器的記憶體中進行暫時性的運算與分析，運算完成後即會將結果回傳給您，伺服器<strong>不會儲存</strong>您的檔案內容、成績資料或任何個人識別資訊。</li>
+                        <li>本工具不會將您的個人資料提供、交換、出租或出售給任何其他個人、團體、私人企業或公務機關。</li>
+                        <li>若您使用「聯絡我們」功能填寫表單，該資料將透過 Google 表單收集與處理，相關權利義務請參閱 Google 隱私權政策。</li>
+                    </ul>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">三、網站對外的相關連結</h4>
+                    <p>本工具的網頁提供其他網站的網路連結，您也可經由本工具所提供的連結，點選進入其他網站。但該連結網站不適用本工具的隱私權保護政策，您必須參考該連結網站中的隱私權保護政策。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">四、隱私權保護政策之修正</h4>
+                    <p>本工具隱私權保護政策將因應需求隨時進行修正，修正後的條款將刊登於網站上。</p>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 服務條款 Modal -->
+        <div v-if="showTermsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4" @click.self="showTermsModal = false">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh] transform transition-all scale-100">
+                <div class="flex justify-between items-center p-6 sm:p-8 border-b flex-shrink-0">
+                    <h3 class="text-2xl font-bold text-gray-800">服務條款</h3>
+                    <button @click="showTermsModal = false" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                </div>
+                <div class="p-6 sm:p-8 overflow-y-auto">
+                    <div class="text-gray-600 space-y-4 leading-relaxed text-justify">
+                    <p>歡迎使用「國立政治大學學程修習推薦暨檢核工具」（以下簡稱本服務）。本服務由恩吸吸呦學程檢核器開發團隊開發與維護。為了保障您的權益，請詳細閱讀本服務條款。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">一、認知與接受條款</h4>
+                    <p>當您開始使用本服務時，即表示您已閱讀、瞭解並同意接受本服務條款之所有內容。若您不同意本服務條款的任何部分，請立即停止使用本服務。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">二、服務性質與免責聲明</h4>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>非官方聲明：</strong>本服務為個人 side project，與國立政治大學無隸屬或代理關係。</li>
+                        <li>本服務旨在協助學生快速檢核學分學程修習進度，<strong>檢核結果僅供參考</strong>。</li>
+                        <li>本服務所依據之學程規則與課程資料可能隨學校政策變動，我們盡力確保資料之即時性與正確性，但不保證內容完全無誤。</li>
+                        <li><strong>最終修畢資格與學分認定，悉以國立政治大學教務處及各學程設置單位之正式審核結果為準。</strong></li>
+                        <li>本工具原始碼採用 MIT 授權條款開源，歡迎自由取用、修改與散布，惟依據授權條款規定，<strong>使用時需保留原始著作權聲明與姓名標示 (Attribution)</strong>。</li>
+                        <li>對於因使用本服務或無法使用本服務而產生之任何直接、間接、附帶、特別、衍生性或懲罰性損害，開發團隊不負任何賠償責任。</li>
+                    </ul>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">三、使用者的守法義務及承諾</h4>
+                    <p>您承諾絕不為任何非法目的或以任何非法方式使用本服務，並承諾遵守中華民國相關法規及一切使用網際網路之國際慣例。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">四、服務變更與終止</h4>
+                    <p>我們保留隨時修改、暫停或終止本服務之權利，恕不另行通知。</p>
+
+                    <h4 class="font-bold text-gray-800 text-lg mt-4">五、生成式 AI 使用聲明</h4>
+                    <p>本服務在開發過程中使用了生成式 AI 技術輔助程式碼撰寫與除錯。儘管開發團隊已盡力審核，但仍可能存在未預期的錯誤。</p>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知 Toast -->
+        <Transition
+            enter-active-class="transition ease-out duration-300"
+            enter-from-class="transform opacity-0 translate-x-4"
+            enter-to-class="transform opacity-100 translate-x-0"
+            leave-active-class="transition ease-in duration-200"
+            leave-from-class="transform opacity-100 translate-x-0"
+            leave-to-class="transform opacity-0 translate-x-4">
+        <div v-if="notification.show" class="fixed top-24 right-4 z-50 max-w-sm w-full bg-white border-l-4 shadow-xl rounded-r-lg pointer-events-auto"
+            :class="notification.type === 'success' ? 'border-green-500' : 'border-blue-500'">
+            <div class="p-4 flex items-start">
+                <div class="flex-shrink-0">
+                    <svg v-if="notification.type === 'success'" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    <svg v-else class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="ml-3 w-0 flex-1 pt-0.5">
+                    <p class="text-sm font-medium text-gray-900">{{ notification.message }}</p>
+                    <button v-if="notification.action" @click="notification.action.handler" class="mt-2 text-sm font-bold text-indigo-600 hover:text-indigo-500 focus:outline-none underline">
+                        {{ notification.action.text }}
+                    </button>
+                </div>
+                <div class="ml-4 flex-shrink-0 flex">
+                    <button @click="notification.show = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        </Transition>
     </div>
 </template>
 
