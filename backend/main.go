@@ -409,9 +409,10 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		if hasCivilLawOverview {
 			var businessReqIndex, lawReqIndex int = -1, -1
 			for i, req := range localRequirements {
-				if req.Category == "商學院" {
+				switch req.Category {
+				case "商學院":
 					businessReqIndex = i
-				} else if req.Category == "法學院" {
+				case "法學院":
 					lawReqIndex = i
 				}
 			}
@@ -963,9 +964,10 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		if programID == "human_resource_management_master" {
 			var reqCatIndex, behCatIndex int = -1, -1
 			for i, res := range categoryResults {
-				if res.Category == "必修：管理心理學" {
+				switch res.Category {
+				case "必修：管理心理學":
 					reqCatIndex = i
-				} else if res.Category == "程序課程：行為類" {
+				case "程序課程：行為類":
 					behCatIndex = i
 				}
 			}
