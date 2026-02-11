@@ -6,7 +6,7 @@ import App from './App.vue';
 
 // 3. (可選) 匯入全域 CSS/樣式檔案
 // 這是 Vite 專案中匯入全域樣式（例如 Tailwind CSS 基礎樣式）的標準做法
-import './index.css'; 
+import './index.css';
 // 如果您將 Tailwind 的指令放在 src/index.css，則需要這行
 
 // 4. 建立應用程式實例
