@@ -70,10 +70,11 @@ type CheckResult struct {
 	CategoryResults    []CategoryResult `json:"categoryResults"`
 	InProgressCourses  []StudentCourse  `json:"inProgressCourses"`
 	ProgramDescription string           `json:"programDescription"`
-	AvgScoreRequired   bool             `json:"avgScoreRequired"`  // 是否需要檢核平均成績
-	AvgScore           string           `json:"avgScore"`          // 平均成績
-	AvgScoreMet        bool             `json:"avgScoreMet"`       // 平均成績是否達標
-	AvgScoreThreshold  string           `json:"avgScoreThreshold"` // 平均成績門檻
+	AvgScoreRequired   bool             `json:"avgScoreRequired"`   // 是否需要檢核平均成績
+	AvgScore           string           `json:"avgScore"`           // 平均成績
+	AvgScoreMet        bool             `json:"avgScoreMet"`        // 平均成績是否達標
+	AvgScoreThreshold  string           `json:"avgScoreThreshold"`  // 平均成績門檻
+	RestrictionMessage string           `json:"restrictionMessage"` // 資格限制訊息
 }
 
 // 輔助結構：用於匹配單一學年/學期的紀錄
@@ -92,7 +93,9 @@ type GradeRecordList struct {
 // 輔助結構：用於匹配 '課業學習' 欄位
 type AcademicInfo struct {
 	GradeRecordList []GradeRecordList `json:"gradeRecordList"`
-	// ... 其他不需要的欄位
+	AboutMe         struct {
+		RegisterMajor string `json:"registerMajor"`
+	} `json:"aboutMe"`
 }
 
 // 頂層結構：用於匹配 JSON 檔案外層的陣列
@@ -110,11 +113,13 @@ type Recommendation struct {
 	PassedPrereqCredits float64 `json:"passedPrereqCredits"` // 新增：已修先修學分
 	CompletionRate      float64 `json:"completionRate"`
 	IsCompleted         bool    `json:"isCompleted"`
+	IsRestricted        bool    `json:"isRestricted"`
 }
 
 // --- 全局變數 ---
 var programs map[string]Program
 var programsByCollege map[string]map[string]Program
+var businessMajors map[string]bool
 
 // --- 輔助函式 ---
 
@@ -165,19 +170,72 @@ func loadPrograms() error {
 			}
 		}
 	}
+
+	// Post-process "跨院" (Interdisciplinary) programs
+	if interdisciplinary, ok := programsByCollege["跨院"]; ok {
+		delete(programsByCollege, "跨院") // Remove the category
+
+		for id, p := range interdisciplinary {
+			originalName := p.Name
+			start := strings.LastIndex(originalName, "（")
+			end := strings.LastIndex(originalName, "）")
+
+			if start != -1 && end != -1 && end > start {
+				collegesPart := originalName[start+len("（") : end]
+				colleges := strings.Split(collegesPart, " x ")
+
+				p.Name = originalName[:start]
+				programs[id] = p // Update global map
+
+				for _, college := range colleges {
+					college = strings.TrimSpace(college)
+					if _, exists := programsByCollege[college]; !exists {
+						programsByCollege[college] = make(map[string]Program)
+					}
+					programsByCollege[college][id] = p
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// 載入系所分類資料 (用於判斷商學院學生)
+func loadDepartments() error {
+	file, err := os.ReadFile("departments_grouped.json")
+	if err != nil {
+		return err
+	}
+
+	var groups map[string]struct {
+		CategoryName string `json:"category_name"`
+		Departments  []struct {
+			Name string `json:"name"`
+		} `json:"departments"`
+	}
+	if err := json.Unmarshal(file, &groups); err != nil {
+		return fmt.Errorf("無法解析 departments_grouped.json: %w", err)
+	}
+
+	businessMajors = make(map[string]bool)
+	if group, ok := groups["3"]; ok { // "3" 代表商學院
+		for _, dept := range group.Departments {
+			businessMajors[dept.Name] = true
+		}
+	}
 	return nil
 }
 
 // 解析並扁平化學生的歷年成績資料。
-func loadStudentData(data []byte) ([]StudentCourse, error) {
+func loadStudentData(data []byte) ([]StudentCourse, string, error) {
 	var rawData StudentDataWrapper
 
 	if err := json.Unmarshal(data, &rawData); err != nil {
-		return nil, fmt.Errorf("解析頂層 JSON 結構失敗: %w", err)
+		return nil, "", fmt.Errorf("解析頂層 JSON 結構失敗: %w", err)
 	}
 
 	if len(rawData) == 0 || len(rawData[0].AcademicInfo.GradeRecordList) == 0 {
-		return nil, fmt.Errorf("JSON 結構不符預期或未找到課程紀錄")
+		return nil, "", fmt.Errorf("JSON 結構不符預期或未找到課程紀錄")
 	}
 
 	flatCourses := []StudentCourse{}
@@ -209,913 +267,80 @@ func loadStudentData(data []byte) ([]StudentCourse, error) {
 	}
 
 	if len(flatCourses) == 0 {
-		return nil, fmt.Errorf("檔案解析成功，但未找到有效的課程紀錄")
+		return nil, "", fmt.Errorf("檔案解析成功，但未找到有效的課程紀錄")
 	}
 
-	return flatCourses, nil
+	major := rawData[0].AcademicInfo.AboutMe.RegisterMajor
+
+	return flatCourses, major, nil
 }
 
 // 核心檢核邏輯 (與原 JS checkProgramCompletion 邏輯對應)
 // 檢核學生課程是否符合指定學分學程的要求。
 // 注意：本函式依賴於全局變數 `programs`
-func checkProgramCompletion(programID string, courses []StudentCourse) CheckResult {
+func checkProgramCompletion(programID string, courses []StudentCourse, studentMajor string) CheckResult {
 	program, ok := programs[programID]
 	if !ok {
 		// 如果學程 ID 無效，回傳一個錯誤結果
 		return CheckResult{ProgramName: fmt.Sprintf("學程 ID %s 不存在", programID)}
 	}
 
-	// var completedCourses []StudentCourse  // 儲存所有已通過的學程相關課程 (已移至下方定義)
-	inProgressCourses := []StudentCourse{} // 儲存所有修習中的學程相關課程
+	// 階段 1: 預處理學程要求
+	localRequirements, programCourseNamesClean, geCourseNames, courseInstructorMap := preprocessRequirements(programID, program)
 
-	// 找出所有學程要求中涉及的課程名稱集合 (使用清理後的名稱作為 Key)
-	programCourseNamesClean := make(map[string]bool)
-	geCourseNames := make(map[string]bool) // 通識課程集合
+	// 階段 2: 篩選並處理課程
+	completedCourses, inProgressCourses := filterAndProcessCourses(programID, courses, &localRequirements, programCourseNamesClean, geCourseNames, courseInstructorMap)
 
-	// 建立 Requirements 的副本，以便進行特殊處理 (如移除課程名稱中的教師名) 而不影響全域變數
-	localRequirements := make([]ProgramRequirement, len(program.Requirements))
-	for i, req := range program.Requirements {
-		localRequirements[i] = req
-		coursesCopy := make([]string, len(req.Courses))
-		copy(coursesCopy, req.Courses)
-		localRequirements[i].Courses = coursesCopy
-	}
-
-	// 特殊處理：東南亞區域研究微學程 (southeast_asian_area_studies)
-	// 建立 課程名稱 -> 教師名稱 的對應表
-	courseInstructorMap := make(map[string]string)
-	isSoutheastAsianProgram := programID == "southeast_asian_area_studies"
-
-	for i, req := range localRequirements {
-		for j, courseName := range req.Courses {
-			// 處理 "課程名稱(教師名)" 的格式，僅針對特定學程
-			if isSoutheastAsianProgram && strings.Contains(courseName, "(") && strings.HasSuffix(courseName, ")") {
-				start := strings.LastIndex(courseName, "(")
-				realName := strings.TrimSpace(courseName[:start])
-				instructor := courseName[start+1 : len(courseName)-1]
-
-				// 更新副本中的課程名稱為真實名稱，以便後續比對
-				localRequirements[i].Courses[j] = realName
-
-				// 記錄該課程對應的教師
-				norm := normalizeCourseName(realName)
-				courseInstructorMap[norm] = instructor
-
-				// 使用真實名稱加入檢查清單
-				programCourseNamesClean[norm] = true
-			} else {
-				// 對 programs.json 中的名稱進行標準化處理
-				programCourseNamesClean[normalizeCourseName(courseName)] = true
-			}
-		}
-	}
-	// 加入通識課程定義
-	for _, courseName := range program.GeneralEducationCourses {
-		norm := normalizeCourseName(courseName)
-		programCourseNamesClean[norm] = true
-		geCourseNames[norm] = true
-	}
-
-	// 特殊處理：近代社會的身體與性別跨領域學分學程 (modern_society_body_gender)
-	// 雖然是學分學程，但有「通識課程至多認列一門」的規定
-	if programID == "modern_society_body_gender" {
-		geCourses := []string{
-			"自我、身體、文化",
-			"同志生命美學",
-			"臺灣電影與文學中的性別",
-			"身心障礙與臺灣藝文",
-			"藝術、自我探索與文化溯源",
-		}
-		for _, courseName := range geCourses {
-			norm := normalizeCourseName(courseName)
-			programCourseNamesClean[norm] = true
-			geCourseNames[norm] = true
-		}
-	}
-
-	// 步驟 1: 篩選與學程相關的課程，並處理通識課程限修一門的規則
-	var relevantPassed []StudentCourse
-	for _, course := range courses {
-		if _, ok := programCourseNamesClean[course.Name]; ok {
-			if course.IsPassed {
-				relevantPassed = append(relevantPassed, course)
-			} else if course.IsInProgress {
-				inProgressCourses = append(inProgressCourses, course)
-			}
-		}
-	}
-
-	// 特殊處理：東南亞區域研究微學程 - 同一名老師開設課程至多認列兩門
-	if isSoutheastAsianProgram {
-		instructorCounts := make(map[string]int)
-		var filteredByInstructor []StudentCourse
-
-		// 先對已通過課程排序 (學分高者優先)，確保剔除的是學分較少或較不重要的
-		sort.Slice(relevantPassed, func(i, j int) bool {
-			return relevantPassed[i].Credit > relevantPassed[j].Credit
-		})
-
-		for _, c := range relevantPassed {
-			norm := normalizeCourseName(c.Name)
-			if instructor, ok := courseInstructorMap[norm]; ok {
-				if instructorCounts[instructor] < 2 {
-					instructorCounts[instructor]++
-					filteredByInstructor = append(filteredByInstructor, c)
-				}
-			} else {
-				filteredByInstructor = append(filteredByInstructor, c)
-			}
-		}
-		relevantPassed = filteredByInstructor
-	}
-
-	// 特殊處理：CFA核心學程 - 特定先修課程即使無成績也視為已修
-	if programID == "CFA" {
-		specialCourses := map[string]bool{
-			"中級會計學（二）": true,
-			"投資學":      true,
-			"商事法":      true,
-			"民法概要":     true,
-		}
-
-		var newInProgress []StudentCourse
-		for _, c := range inProgressCourses {
-			if specialCourses[c.Name] {
-				c.IsPassed = true
-				relevantPassed = append(relevantPassed, c)
-			} else {
-				newInProgress = append(newInProgress, c)
-			}
-		}
-		inProgressCourses = newInProgress
-	}
-
-	// 特殊處理：專利學分學程 (patent)
-	if programID == "patent" {
-		// 1. 處理學分上限 (Capping)
-		// 定義需要控管的群組
-		type CapGroup struct {
-			Courses []string
-			Limit   float64
-		}
-		capGroups := []CapGroup{
-			{[]string{"微積分"}, 2.0},
-			{[]string{"民法概要", "民法總則", "民法債編總論（一）", "民法債編總論（二）"}, 6.0},
-			{[]string{"普通物理學實驗", "普通物理學實驗（一）", "普通物理學實驗（二）"}, 2.0},
-		}
-
-		for _, group := range capGroups {
-			var groupCourses []*StudentCourse
-			// 找出屬於該群組的已通過課程 (使用指標以便修改 completedCourses 中的 Credit)
-			for i := range relevantPassed {
-				c := &relevantPassed[i]
-				for _, target := range group.Courses {
-					if c.Name == target {
-						groupCourses = append(groupCourses, c)
-						break
-					}
-				}
-			}
-
-			// 計算總學分並進行裁切
-			currentTotal := 0.0
-			for _, c := range groupCourses {
-				if currentTotal >= group.Limit {
-					c.Credit = 0 // 超出額度，不計分
-					c.IsCapped = true
-				} else if currentTotal+c.Credit > group.Limit {
-					// 部分採計
-					allowed := group.Limit - currentTotal
-					c.Credit = allowed
-					c.IsCapped = true
-					currentTotal += allowed
-				} else {
-					currentTotal += c.Credit
-				}
-			}
-		}
-
-		// 2. 處理 "民法概要" 的歸屬 (法學院 vs 商學院)
-		// 規則：可認列為法學院或商學院其一。
-		// 策略：若商學院分類中沒有其他課程，則將民法概要歸類為商學院；否則歸類為法學院。
-		hasCivilLawOverview := false
-		for _, c := range relevantPassed {
-			if c.Name == "民法概要" && c.Credit > 0 {
-				hasCivilLawOverview = true
-				break
-			}
-		}
-
-		if hasCivilLawOverview {
-			var businessReqIndex, lawReqIndex int = -1, -1
-			for i, req := range localRequirements {
-				switch req.Category {
-				case "商學院":
-					businessReqIndex = i
-				case "法學院":
-					lawReqIndex = i
-				}
-			}
-
-			if businessReqIndex != -1 && lawReqIndex != -1 {
-				// 檢查商學院是否有 "民法概要" 以外的合格課程
-				businessHasOther := false
-				for _, c := range relevantPassed {
-					if c.Name == "民法概要" {
-						continue
-					}
-					for _, target := range localRequirements[businessReqIndex].Courses {
-						if c.Name == target {
-							businessHasOther = true
-							break
-						}
-					}
-					if businessHasOther {
-						break
-					}
-				}
-
-				// 若商學院有其他課程，則民法概要歸法學院 (從商學院移除)；反之歸商學院 (從法學院移除)
-				targetToRemoveIndex := businessReqIndex
-				if !businessHasOther {
-					targetToRemoveIndex = lawReqIndex
-				}
-
-				// 執行移除
-				newCourses := []string{}
-				for _, c := range localRequirements[targetToRemoveIndex].Courses {
-					if c != "民法概要" {
-						newCourses = append(newCourses, c)
-					}
-				}
-				localRequirements[targetToRemoveIndex].Courses = newCourses
-			}
-		}
-	}
-
-	// 特殊處理：金融科技專長學程 (fintech)
-	if programID == "fintech" {
-		// Rule 2: 計算機概論/計算機程式設計/計算機程式 三門課僅能擇一門認列
-		compIntroGroup := []string{"計算機概論", "計算機程式設計", "計算機程式"}
-		var bestCompIntro StudentCourse
-		foundCompIntro := false
-		var otherCourses []StudentCourse
-
-		for _, c := range relevantPassed {
-			isCompIntro := false
-			for _, name := range compIntroGroup {
-				if c.Name == name {
-					isCompIntro = true
-					break
-				}
-			}
-			if isCompIntro {
-				if !foundCompIntro || c.Credit > bestCompIntro.Credit {
-					bestCompIntro = c
-					foundCompIntro = true
-				}
-			} else {
-				otherCourses = append(otherCourses, c)
-			}
-		}
-		relevantPassed = otherCourses
-		if foundCompIntro {
-			relevantPassed = append(relevantPassed, bestCompIntro)
-		}
-
-		// Rule 3: 5 specific courses overlap A and C. Pick one category.
-		overlapNames := map[string]bool{
-			"機器學習與人工智慧個案實作":       true,
-			"商業資料分析基礎：Python （一）": true,
-			"商業資料分析：Python（1）":    true,
-			"程式設計與統計軟體(實務)":       true,
-			"用Python學財務計量":        true,
-		}
-
-		idxA, idxB, idxC := -1, -1, -1
-		for i, req := range localRequirements {
-			if strings.Contains(req.Category, "群A") {
-				idxA = i
-			}
-			if strings.Contains(req.Category, "群B") {
-				idxB = i
-			}
-			if strings.Contains(req.Category, "選修C") {
-				idxC = i
-			}
-		}
-
-		if idxA != -1 && idxB != -1 && idxC != -1 {
-			var passedPureA, passedPureB int
-			var passedOverlap []string
-
-			isInList := func(name string, list []string) bool {
-				for _, v := range list {
-					if v == name {
-						return true
-					}
-				}
-				return false
-			}
-
-			for _, c := range relevantPassed {
-				if overlapNames[c.Name] {
-					passedOverlap = append(passedOverlap, c.Name)
-				} else {
-					if isInList(c.Name, localRequirements[idxA].Courses) {
-						passedPureA++
-					}
-					if isInList(c.Name, localRequirements[idxB].Courses) {
-						passedPureB++
-					}
-				}
-			}
-
-			assignedToA := []string{}
-			assignedToC := []string{}
-			currentA := passedPureA
-			currentB := passedPureB
-
-			for _, name := range passedOverlap {
-				// Priority: Meet A min count (1) -> Meet A+B min count (3) -> Assign to C
-				if currentA < 1 {
-					assignedToA = append(assignedToA, name)
-					currentA++
-				} else if (currentA + currentB) < 3 {
-					assignedToA = append(assignedToA, name)
-					currentA++
-				} else {
-					assignedToC = append(assignedToC, name)
-				}
-			}
-
-			// Modify localRequirements to enforce assignment
-			newCoursesA := []string{}
-			for _, name := range localRequirements[idxA].Courses {
-				if !overlapNames[name] {
-					newCoursesA = append(newCoursesA, name)
-				}
-			}
-			newCoursesA = append(newCoursesA, assignedToA...)
-			localRequirements[idxA].Courses = newCoursesA
-
-			newCoursesC := []string{}
-			for _, name := range localRequirements[idxC].Courses {
-				if !overlapNames[name] {
-					newCoursesC = append(newCoursesC, name)
-				}
-			}
-			newCoursesC = append(newCoursesC, assignedToC...)
-			localRequirements[idxC].Courses = newCoursesC
-		}
-	}
-
-	// 處理通識課程：若超過一門，僅保留學分最高者
-	var gePassed []StudentCourse
-	var otherPassed []StudentCourse
+	// 檢查是否有通識課程超限 (用於後續顯示)
 	geLimitExceeded := false
-	for _, c := range relevantPassed {
-		if geCourseNames[c.Name] {
-			gePassed = append(gePassed, c)
-		} else {
-			otherPassed = append(otherPassed, c)
+	if len(program.GeneralEducationCourses) > 0 {
+		geCount := 0
+		for _, c := range completedCourses {
+			if geCourseNames[c.Name] {
+				geCount++
+			}
+		}
+		// filterAndProcessCourses 已經將多餘的通識課程移除，所以這裡我們比較原始數量
+		// 但因為我們沒有保留原始的 relevantPassed，這裡可以用一個簡單的邏輯：
+		// 如果 filterAndProcessCourses 已經處理了，我們其實不需要知道是否超限，除非要顯示警告。
+		// 為了顯示警告，我們可以在這裡重新檢查原始輸入中符合通識的數量。
+		rawGeCount := 0
+		for _, c := range courses {
+			if geCourseNames[c.Name] && c.IsPassed {
+				rawGeCount++
+			}
+		}
+		if rawGeCount > 1 {
+			geLimitExceeded = true
 		}
 	}
-	if len(gePassed) > 1 {
-		sort.Slice(gePassed, func(i, j int) bool {
-			return gePassed[i].Credit > gePassed[j].Credit
-		})
-		geLimitExceeded = true
-		gePassed = gePassed[:1]
-	}
-	completedCourses := append(otherPassed, gePassed...)
 
 	totalPassedCredits := 0.0 // 將由後續計算有效學分決定
 
 	// 步驟 2 & 3: 檢核分類要求 (門數) 和總學分
 	categoryResults := []CategoryResult{}
-	allCategoriesMet := true
 
 	// 特殊處理：管理會計專業學程 (management_accounting)
 	isManagementAccounting := programID == "management_accounting"
 
-	// 定義平均成績相關變數 (提升作用域以供最後回傳使用)
-	avgScoreRequired := false
-	avgScoreStr := "0.0"
-	avgScoreMet := false
-	avgScoreThreshold := ""
-
 	if isManagementAccounting {
-		// 規則：若「經濟學」修習未達 6 學分，則不採計（以 0 學分計）
-		econCredits := 0.0
-		totalPassedCredits = 0.0
-		for _, c := range completedCourses {
-			totalPassedCredits += c.Credit
-			if c.Name == "經濟學" {
-				econCredits += c.Credit
-			}
-		}
-
-		if econCredits < 6.0 {
-			totalPassedCredits -= econCredits
-			// 從已通過課程列表中移除經濟學，以免誤導
-			var newCompleted []StudentCourse
-			for _, c := range completedCourses {
-				if c.Name != "經濟學" {
-					newCompleted = append(newCompleted, c)
-				}
-			}
-			completedCourses = newCompleted
-		}
-
-		isMet := totalPassedCredits >= program.MinCredits
-
-		// 計算不重複的已通過課程門數
-		uniquePassedCourseNames := make(map[string]bool)
-		for _, c := range completedCourses {
-			uniquePassedCourseNames[c.Name] = true
-		}
-		passedCount := len(uniquePassedCourseNames)
-
-		categoryResults = append(categoryResults, CategoryResult{
-			Category:        program.Requirements[0].Category,
-			RequiredCount:   0, // 門數非強制要求
-			RequiredCredits: program.MinCredits,
-			PassedCount:     passedCount,
-			PassedCredits:   totalPassedCredits,
-			IsMet:           isMet,
-			PassedCourses:   completedCourses, // 直接將所有已通過課程賦予
-		})
-		allCategoriesMet = isMet
+		var isMet bool
+		categoryResults, isMet, totalPassedCredits = processManagementAccounting(program, completedCourses)
+		// allCategoriesMet 將在 postprocessResults 中統一計算
+		_ = isMet
 	} else {
-		effectiveTotalCredits := 0.0 // 用於計算考慮 MaxCount 後的有效總學分
-
-		// 一般學程邏輯
-		for _, req := range localRequirements {
-			passedInThisCategory := []StudentCourse{} // 該分類下已通過的課程紀錄
-
-			// 找出該類別已通過課程
-			for _, c := range completedCourses {
-				// 檢查該課程是否在當前分類的要求列表中
-				isMatch := false
-				for _, reqCourseName := range req.Courses {
-					if c.Name == reqCourseName {
-						isMatch = true
-						break
-					}
-				}
-				if isMatch {
-					passedInThisCategory = append(passedInThisCategory, c)
-				}
-			}
-
-			// 根據學分由高到低排序，以便在有 MaxCount 限制時優先採計高學分課程
-			sort.Slice(passedInThisCategory, func(i, j int) bool {
-				return passedInThisCategory[i].Credit > passedInThisCategory[j].Credit
-			})
-
-			// 計算不重複的已通過課程門數
-			uniquePassedCourseNames := make(map[string]bool)
-			passedCreditsInCategory := 0.0
-			hasCappedCourse := false
-			for _, c := range passedInThisCategory {
-				uniquePassedCourseNames[c.Name] = true
-				passedCreditsInCategory += c.Credit
-				if c.IsCapped {
-					hasCappedCourse = true
-				}
-			}
-			passedCount := len(uniquePassedCourseNames)
-
-			// 計算該分類貢獻的有效學分 (處理 MaxCount 和 MaxCredits)
-			creditsContributingToTotal := 0.0
-			countContributing := 0
-
-			limitExceeded := false
-			exceededMsg := ""
-
-			for _, c := range passedInThisCategory {
-				// Check MaxCount
-				if req.MaxCount > 0 && countContributing >= req.MaxCount {
-					limitExceeded = true
-					exceededMsg = fmt.Sprintf("超過門數上限 (至多 %d 門)", req.MaxCount)
-					break
-				}
-
-				// Check MaxCredits
-				addedCredit := c.Credit
-				if req.MaxCredits > 0 {
-					if creditsContributingToTotal+addedCredit > req.MaxCredits {
-						addedCredit = req.MaxCredits - creditsContributingToTotal
-						limitExceeded = true
-						exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
-					}
-				}
-
-				if addedCredit > 0 {
-					creditsContributingToTotal += addedCredit
-					countContributing++
-				} else if req.MaxCredits > 0 && creditsContributingToTotal >= req.MaxCredits {
-					limitExceeded = true
-					exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
-					break
-				}
-			}
-			if !strings.HasPrefix(req.Category, "先修課程") {
-				effectiveTotalCredits += creditsContributingToTotal
-			}
-
-			// 檢查是否有被 Patent 邏輯 Cap 的課程
-			if hasCappedCourse && !limitExceeded {
-				limitExceeded = true
-				exceededMsg = "部分課程因超過群組學分上限而不計分或減修"
-			}
-			// 檢查 MaxCount (針對總數)
-			if req.MaxCount > 0 && passedCount > req.MaxCount && !limitExceeded {
-				limitExceeded = true
-				exceededMsg = fmt.Sprintf("超過門數上限 (至多 %d 門)", req.MaxCount)
-			}
-			// 檢查 MaxCredits (針對總學分)
-			if req.MaxCredits > 0 && passedCreditsInCategory > req.MaxCredits && !limitExceeded {
-				limitExceeded = true
-				exceededMsg = fmt.Sprintf("超過學分上限 (至多 %.1f 學分)", req.MaxCredits)
-			}
-
-			// 判斷該分類是否符合要求 (MinCount, MinCredits)
-			isMet := passedCount >= req.MinCount
-			if req.MinCredits > 0 && passedCreditsInCategory < req.MinCredits {
-				isMet = false
-			}
-
-			// 若先修課程類別課程已修滿該列所有已列課程，將狀態視為已達成 (僅在無其他門數/學分規定時適用)
-			if strings.HasPrefix(req.Category, "先修課程") && len(req.Courses) > 0 {
-				// 若有學分或門數規定仍以規定為主，但沒有規定者再比照這個要求
-				if req.MinCount == 0 && req.MinCredits == 0 {
-					req.MinCount = len(req.Courses) // 將隱性要求轉換為顯性門數要求，以便前端正確顯示
-					allPassed := true
-					for _, courseName := range req.Courses {
-						if !uniquePassedCourseNames[courseName] {
-							allPassed = false
-							break
-						}
-					}
-					isMet = allPassed
-				}
-			}
-
-			if !isMet {
-				allCategoriesMet = false
-			}
-
-			categoryResults = append(categoryResults, CategoryResult{
-				Category:        req.Category,
-				RequiredCount:   req.MinCount,
-				RequiredCredits: req.MinCredits,
-				PassedCount:     passedCount,
-				PassedCredits:   passedCreditsInCategory,
-				IsMet:           isMet,
-				PassedCourses:   passedInThisCategory,
-				LimitExceeded:   limitExceeded,
-				ExceededMessage: exceededMsg,
-			})
-		}
-
-		// 特殊處理：金融科技專長學程 (fintech) - Rule 1: A+B >= 3
-		if programID == "fintech" {
-			countA, countB := 0, 0
-			foundA, foundB := false, false
-			for _, res := range categoryResults {
-				if strings.Contains(res.Category, "群A") {
-					countA = res.PassedCount
-					foundA = true
-				}
-				if strings.Contains(res.Category, "群B") {
-					countB = res.PassedCount
-					foundB = true
-				}
-			}
-			if foundA && foundB {
-				total := countA + countB
-				isMet := total >= 3
-				msg := ""
-				if !isMet {
-					allCategoriesMet = false
-					msg = "群A與群B合計須至少修習 3 門"
-				}
-				newResult := CategoryResult{
-					Category:        "群A + 群B 總修習門數",
-					RequiredCount:   3,
-					PassedCount:     total,
-					PassedCredits:   0,
-					IsMet:           isMet,
-					LimitExceeded:   false,
-					ExceededMessage: msg,
-					PassedCourses:   []StudentCourse{},
-				}
-				// 將結果插入在 "群B" 之後
-				insertIdx := -1
-				for i, res := range categoryResults {
-					if strings.Contains(res.Category, "群B") {
-						insertIdx = i + 1
-						break
-					}
-				}
-				if insertIdx != -1 && insertIdx <= len(categoryResults) {
-					categoryResults = append(categoryResults[:insertIdx], append([]CategoryResult{newResult}, categoryResults[insertIdx:]...)...)
-				} else {
-					categoryResults = append(categoryResults, newResult)
-				}
-			}
-		}
-
-		// 特殊處理：跨領域精準健康學分學程
-		if program.Name == "跨領域精準健康學分學程" {
-			targetGroups := []string{"群A", "群B", "群C", "群D"}
-			metGroups := 0
-			for _, group := range targetGroups {
-				for _, res := range categoryResults {
-					if strings.Contains(res.Category, group) && res.PassedCount > 0 {
-						metGroups++
-						break
-					}
-				}
-			}
-
-			isMet := metGroups >= 2
-			msg := ""
-			if !isMet {
-				allCategoriesMet = false
-				msg = "須於群A至群D中至少修習兩群課程"
-			}
-
-			newResult := CategoryResult{
-				Category:        "跨群選修要求 (群A至群D至少兩群)",
-				RequiredCount:   2,
-				PassedCount:     metGroups,
-				PassedCredits:   0,
-				IsMet:           isMet,
-				LimitExceeded:   false,
-				ExceededMessage: msg,
-				PassedCourses:   []StudentCourse{},
-			}
-
-			// 插入在 "群D" 之後
-			insertIdx := -1
-			for i, res := range categoryResults {
-				if strings.Contains(res.Category, "群D") {
-					insertIdx = i + 1
-				}
-			}
-
-			if insertIdx != -1 && insertIdx <= len(categoryResults) {
-				categoryResults = append(categoryResults[:insertIdx], append([]CategoryResult{newResult}, categoryResults[insertIdx:]...)...)
-			} else {
-				categoryResults = append(categoryResults, newResult)
-			}
-		}
-
-		// 特殊處理：東南亞文化與宗教跨領域學分學程 (southeast_asia_culture_religion_interdisciplinary)
-		if programID == "southeast_asia_culture_religion_interdisciplinary" {
-			for i := range categoryResults {
-				if strings.Contains(categoryResults[i].Category, "語言領域") {
-					passed := categoryResults[i].PassedCourses
-
-					hasViet := false
-					hasIndo := false
-					hasThai := false
-
-					checkPair := func(name string) bool {
-						found1 := false
-						found2 := false
-						for _, c := range passed {
-							if c.Name == name {
-								if c.Semester == "1" {
-									found1 = true
-								}
-								if c.Semester == "2" {
-									found2 = true
-								}
-							}
-						}
-						return found1 && found2
-					}
-
-					if checkPair("初級越語") {
-						hasViet = true
-					}
-					if checkPair("初級印尼語") {
-						hasIndo = true
-					}
-					if checkPair("初級泰語") {
-						hasThai = true
-					}
-
-					if !hasViet && !hasIndo && !hasThai {
-						categoryResults[i].IsMet = false
-						allCategoriesMet = false
-						categoryResults[i].LimitExceeded = true
-						categoryResults[i].ExceededMessage = "須修畢同一語言之第一學期及第二學期課程（如：初級越語 上/下學期）"
-					}
-					break
-				}
-			}
-		}
-
-		// 特殊處理：人力資源管理學程 (學士及碩士) - 程序課程三類總共要至少修兩門
-		if programID == "human_resource_management_undergraduate" || programID == "human_resource_management_master" {
-			targetCats := []string{"程序課程：管理類", "程序課程：勞工關係類", "程序課程：行為類"}
-			uniquePassed := make(map[string]bool)
-			foundAny := false
-
-			for _, res := range categoryResults {
-				for _, target := range targetCats {
-					if res.Category == target {
-						foundAny = true
-						for _, c := range res.PassedCourses {
-							uniquePassed[c.Name] = true
-						}
-					}
-				}
-			}
-
-			if foundAny {
-				count := len(uniquePassed)
-				isMet := count >= 2
-				msg := ""
-				if !isMet {
-					allCategoriesMet = false
-					msg = "程序課程三類（管理類、勞工關係類、行為類）總共須至少修習 2 門"
-				}
-
-				categoryResults = append(categoryResults, CategoryResult{
-					Category:        "程序課程總門數檢核",
-					RequiredCount:   2,
-					PassedCount:     count,
-					PassedCredits:   0,
-					IsMet:           isMet,
-					PassedCourses:   []StudentCourse{},
-					LimitExceeded:   false,
-					ExceededMessage: msg,
-				})
-			}
-		}
-
-		// 特殊處理：人力資源管理學程 (碩士班) - 若修習「組織行為專題研究」，需另修行為類程序課程
-		if programID == "human_resource_management_master" {
-			var reqCatIndex, behCatIndex int = -1, -1
-			for i, res := range categoryResults {
-				switch res.Category {
-				case "必修：管理心理學":
-					reqCatIndex = i
-				case "程序課程：行為類":
-					behCatIndex = i
-				}
-			}
-
-			if reqCatIndex != -1 {
-				hasTarget := false
-				var targetCredit float64
-				for _, c := range categoryResults[reqCatIndex].PassedCourses {
-					if c.Name == "組織行為專題研究" {
-						hasTarget = true
-						targetCredit = c.Credit
-						break
-					}
-				}
-
-				if hasTarget {
-					hasBehavioral := false
-					if behCatIndex != -1 && categoryResults[behCatIndex].PassedCount > 0 {
-						hasBehavioral = true
-					}
-
-					if !hasBehavioral {
-						// 移除該課程
-						newPassed := []StudentCourse{}
-						for _, c := range categoryResults[reqCatIndex].PassedCourses {
-							if c.Name != "組織行為專題研究" {
-								newPassed = append(newPassed, c)
-							}
-						}
-						categoryResults[reqCatIndex].PassedCourses = newPassed
-						categoryResults[reqCatIndex].PassedCount = len(newPassed)
-						categoryResults[reqCatIndex].PassedCredits -= targetCredit
-						effectiveTotalCredits -= targetCredit
-
-						if categoryResults[reqCatIndex].PassedCount < categoryResults[reqCatIndex].RequiredCount {
-							categoryResults[reqCatIndex].IsMet = false
-							allCategoriesMet = false
-							categoryResults[reqCatIndex].LimitExceeded = true
-							categoryResults[reqCatIndex].ExceededMessage = "修習「組織行為專題研究」須另修習至少一門行為類程序課程始得認列"
-						}
-					}
-				}
-			}
-		}
-
-		// 特殊處理：行銷學程 (學士班及碩士班) - 選修課程同性質群組僅可列計一門
-		if programID == "marketing_undergraduate" || programID == "marketing_master" {
-			// 定義同性質課程群組
-			restrictedGroups := [][]string{
-				{"公共關係管理", "公共關係概論", "公共關係理論", "公關管理專題－危機溝通"},
-				{"服務業行銷", "服務行銷管理"},
-				{"多變量分析", "多變量統計分析"},
-				{"財務行銷", "財務行銷實務專題"},
-				{"品牌行銷專題研究", "專題研究－品牌行銷"},
-			}
-
-			for i, res := range categoryResults {
-				if res.Category == "選修課程" {
-					// 建立課程名稱到群組索引的映射
-					courseToGroup := make(map[string]int)
-					for gIdx, group := range restrictedGroups {
-						for _, name := range group {
-							courseToGroup[name] = gIdx
-						}
-					}
-
-					usedGroups := make(map[int]bool)
-					var newPassed []StudentCourse
-					var newPassedCredits float64
-
-					// 假設已通過課程已按學分排序 (在前面的邏輯中已做)，直接遍歷
-					for _, c := range res.PassedCourses {
-						if gIdx, exists := courseToGroup[c.Name]; exists {
-							if !usedGroups[gIdx] {
-								usedGroups[gIdx] = true
-								newPassed = append(newPassed, c)
-								newPassedCredits += c.Credit
-							} else {
-								// 此群組已有一門被採計，此門課為重複性質，予以剔除
-								// 需從總有效學分中扣除
-								effectiveTotalCredits -= c.Credit
-							}
-						} else {
-							// 非限制群組課程，直接保留
-							newPassed = append(newPassed, c)
-							newPassedCredits += c.Credit
-						}
-					}
-
-					// 更新該分類結果
-					categoryResults[i].PassedCourses = newPassed
-					categoryResults[i].PassedCount = len(newPassed)
-					categoryResults[i].PassedCredits = newPassedCredits
-					categoryResults[i].IsMet = categoryResults[i].PassedCount >= categoryResults[i].RequiredCount
-					break
-				}
-			}
-		}
-
-		// 更新總通過學分為計算後的有效學分
-		totalPassedCredits = effectiveTotalCredits
-
-		// 特殊處理：行銷學程、CFA核心學程 - 認列學分分數平均須達 80 分，不動產財務與管理核心學程 - 認列學分分數平均須達 70 分
-		// 計算範圍：必修＆選修 (排除先修課程)
-
-		if programID == "marketing_undergraduate" || programID == "marketing_master" || programID == "CFA" || programID == "real_property_financial_management" {
-			avgScoreRequired = true
-			threshold := 80.0
-			if programID == "real_property_financial_management" {
-				threshold = 70.0
-			}
-			avgScoreThreshold = fmt.Sprintf("%g", threshold)
-
-			totalScoreCredit := 0.0
-			totalCreditForAvg := 0.0
-			uniqueCoursesForAvg := make(map[string]bool)
-
-			for _, res := range categoryResults {
-				// 排除先修課程
-				if strings.Contains(res.Category, "先修") {
-					continue
-				}
-				for _, c := range res.PassedCourses {
-					// 避免重複計算 (雖然不同分類通常不重疊，但保險起見)
-					key := c.Name + "-" + c.Semester
-					if !uniqueCoursesForAvg[key] {
-						uniqueCoursesForAvg[key] = true
-						// 解析成績
-						s, err := strconv.ParseFloat(c.Score, 64)
-						if err == nil {
-							totalScoreCredit += s * c.Credit
-							totalCreditForAvg += c.Credit
-						}
-					}
-				}
-			}
-
-			avg := 0.0
-			if totalCreditForAvg > 0 {
-				avg = totalScoreCredit / totalCreditForAvg
-			}
-			avgScoreStr = fmt.Sprintf("%.2f", avg)
-			// 需達標
-			avgScoreMet = avg >= threshold
-		}
+		// 一般學程邏輯：呼叫 special_handlers.go 中的函式
+		categoryResults, totalPassedCredits = processStandardRequirements(localRequirements, completedCourses)
 
 		// 如果有通識課程超限，加入一個額外的分類結果顯示
 		if len(program.GeneralEducationCourses) > 0 && geLimitExceeded {
+			// 找出被採計的通識課程 (在 filterAndProcessCourses 中已處理為僅剩一門或零門)
+			var gePassed []StudentCourse
+			for _, c := range completedCourses {
+				if geCourseNames[c.Name] {
+					gePassed = append(gePassed, c)
+				}
+			}
 			geCredits := 0.0
 			for _, c := range gePassed {
 				geCredits += c.Credit
@@ -1132,6 +357,9 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 			})
 		}
 	}
+
+	// 階段 3: 後處理 (跨群檢核、平均成績、系所限制等)
+	categoryResults, allCategoriesMet, restrictionMessage, avgScoreRequired, avgScoreStr, avgScoreMet, avgScoreThreshold, totalPassedCredits := postprocessResults(programID, program, studentMajor, categoryResults, totalPassedCredits)
 
 	// 步驟 4: 總結
 	totalCreditsMet := totalPassedCredits >= program.MinCredits
@@ -1156,6 +384,7 @@ func checkProgramCompletion(programID string, courses []StudentCourse) CheckResu
 		AvgScore:           avgScoreStr,
 		AvgScoreMet:        avgScoreMet,
 		AvgScoreThreshold:  avgScoreThreshold,
+		RestrictionMessage: restrictionMessage,
 	}
 }
 
@@ -1175,23 +404,23 @@ func getPrograms(w http.ResponseWriter, r *http.Request) {
 }
 
 // 輔助函式：從請求中解析學生資料
-func parseStudentDataFromRequest(r *http.Request) ([]StudentCourse, error) {
+func parseStudentDataFromRequest(r *http.Request) ([]StudentCourse, string, error) {
 	// 1. 解析 multipart 表單
 	err := r.ParseMultipartForm(32 << 20) // 32MB
 	if err != nil {
-		return nil, fmt.Errorf("解析表單失敗: %w", err)
+		return nil, "", fmt.Errorf("解析表單失敗: %w", err)
 	}
 
 	// 2. 讀取學生 JSON 檔案
 	file, _, err := r.FormFile("student_json")
 	if err != nil {
-		return nil, fmt.Errorf("讀取檔案失敗: %w", err)
+		return nil, "", fmt.Errorf("讀取檔案失敗: %w", err)
 	}
 	defer file.Close()
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return nil, fmt.Errorf("讀取檔案內容失敗: %w", err)
+		return nil, "", fmt.Errorf("讀取檔案內容失敗: %w", err)
 	}
 
 	// 3. 解析學生課程資料
@@ -1207,7 +436,7 @@ func checkProgramsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 解析學生資料
-	studentCourses, err := parseStudentDataFromRequest(r)
+	studentCourses, major, err := parseStudentDataFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1225,7 +454,7 @@ func checkProgramsHandler(w http.ResponseWriter, r *http.Request) {
 	// 執行檢核
 	var results []CheckResult
 	for _, id := range programIDs {
-		result := checkProgramCompletion(id, studentCourses)
+		result := checkProgramCompletion(id, studentCourses, major)
 		results = append(results, result)
 	}
 
@@ -1242,7 +471,7 @@ func recommendProgramsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 解析學生資料
-	studentCourses, err := parseStudentDataFromRequest(r)
+	studentCourses, major, err := parseStudentDataFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1252,7 +481,17 @@ func recommendProgramsHandler(w http.ResponseWriter, r *http.Request) {
 	var recommendations []Recommendation
 
 	for id, program := range programs {
-		result := checkProgramCompletion(id, studentCourses)
+		isRestricted := false
+		// 若為外語專長商管學分學程且學生為商學院學生，則排除於推薦列表
+		if id == "foreign_language_student_business_primer" && businessMajors[major] {
+			isRestricted = true
+		}
+		// 若為管理會計專業學程且學生非商學院學生，則排除於推薦列表
+		if id == "management_accounting" && !businessMajors[major] {
+			isRestricted = true
+		}
+
+		result := checkProgramCompletion(id, studentCourses, major)
 
 		passed, _ := strconv.ParseFloat(result.TotalPassedCredits, 64)
 		min, _ := strconv.ParseFloat(result.MinRequiredCredits, 64)
@@ -1288,6 +527,7 @@ func recommendProgramsHandler(w http.ResponseWriter, r *http.Request) {
 				PassedPrereqCredits: passedPrereq,
 				CompletionRate:      rate,
 				IsCompleted:         result.IsCompleted,
+				IsRestricted:        isRestricted,
 			})
 		}
 	}
@@ -1358,6 +598,12 @@ func main() {
 	err := loadPrograms()
 	if err != nil {
 		fmt.Printf("初始化失敗: %v\n", err)
+		os.Exit(1)
+	}
+	// 載入系所資料
+	err = loadDepartments()
+	if err != nil {
+		fmt.Printf("載入系所資料失敗: %v\n", err)
 		os.Exit(1)
 	}
 

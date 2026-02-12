@@ -21,6 +21,18 @@ defineProps({
 
         <p class="text-stone-700 mb-6 leading-relaxed">{{ result.programDescription }}</p>
 
+        <!-- 顯示資格限制訊息 -->
+        <div v-if="result.restrictionMessage"
+            class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 rounded-r-lg shadow-sm">
+            <div class="flex items-start">
+                <span class="text-2xl mr-3">🚫</span>
+                <div>
+                    <h4 class="font-bold text-lg mb-1">資格限制</h4>
+                    <p>{{ result.restrictionMessage }}</p>
+                </div>
+            </div>
+        </div>
+
         <div class="mb-6 p-5 bg-white/60 rounded-xl border border-black/5 backdrop-blur-sm">
             <h4 class="text-lg font-bold text-stone-800 mb-3 font-serif">學程總學分要求</h4>
             <div class="flex justify-between text-sm">

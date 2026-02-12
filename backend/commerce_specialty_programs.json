@@ -312,7 +312,7 @@
             ]
         },
         "management_accounting": {
-            "name": "管理會計專業學程",
+            "name": "（限商院）管理會計專業學程",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分。註：「經濟學」修習未達 6 學分不予採計。",
             "requirements": [

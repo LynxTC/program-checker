@@ -29,7 +29,7 @@ const emit = defineEmits([
                 <span class="text-amber-500 mr-2">⚠️</span> 注意事項
             </h3>
             <p class="text-stone-600 mb-8 leading-relaxed">
-                本系統檢核結果僅供參考<br>可能因申請年度不同或修習同名課程產生檢核誤差<br><br>
+                本系統分析結果僅供參考<br>可能因申請年度不同或修習同名非認列課程產生誤差<br><br>
                 <span
                     class="font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded whitespace-nowrap text-xs sm:text-base">實際修習狀態以學程設置單位認定為準</span>
             </p>

@@ -691,9 +691,9 @@
     },
     "商學院": {
         "biotechnology_management": {
-            "name": "生物科技管理學程（114學年度起修讀）",
+            "name": "生物科技管理學程",
             "min_credits": 20.0,
-            "description": "修習認列科目達 20 學分（必修 12 + 選修 8）",
+            "description": "必修 12 + 選修 8（114學年度起適用）",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -1721,7 +1721,7 @@
     },
     "跨院": {
         "foreign_language_communication": {
-            "name": "外語傳播第二專長學分學程（外國語文學院x傳播學院）",
+            "name": "外語傳播第二專長學分學程（外國語文學院 x 傳播學院）",
             "min_credits": 24.0,
             "description": "修習認列科目達 24 學分（外語 12 + 傳播 12。註：因外語領域認列範圍較廣，無法於此檢核，僅供檢核傳播領域）",
             "requirements": [
@@ -1742,7 +1742,7 @@
             ]
         },
         "patent": {
-            "name": "專利學分學程（法學院x理學院x商學院）",
+            "name": "專利學分學程（法學院 x 理學院 x 商學院）",
             "min_credits": 21.0,
             "description": "修習認列科目達 21 學分（非自身所屬學院之專業必選修科目，應至少有9學分，且商學院、法學院及理學院/資訊學院所開科目至少須各修習一科）",
             "requirements": [
@@ -1801,7 +1801,7 @@
             ]
         },
         "foreign_language_student_business_primer": {
-            "name": "外語專長商管學分學程（外國語文學院x商學院）",
+            "name": "（限非商院）外語專長商管學分學程（外國語文學院 x 商學院）",
             "min_credits": 21.0,
             "description": "修習認列科目達 21 學分（必修 12 + 群修 9）",
             "requirements": [

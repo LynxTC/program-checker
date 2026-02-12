@@ -462,7 +462,12 @@ onUnmounted(() => {
                     <div v-for="rec in rankedRecommendations" :key="rec.programID"
                         class="group bg-white p-6 rounded-2xl border border-stone-100 shadow-sm transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative overflow-hidden">
                         <!-- Decorative background accent -->
-                        <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-600 transition-colors duration-300">
+                        <div class="absolute top-0 left-0 w-1.5 h-full transition-colors duration-300" :class="{
+                            'bg-stone-300': rec.isRestricted,
+                            'bg-emerald-600': !rec.isRestricted && rec.isCompleted,
+                            'bg-amber-500': !rec.isRestricted && !rec.isCompleted && rec.completionRate >= 1,
+                            'bg-emerald-200': !rec.isRestricted && !rec.isCompleted && rec.completionRate < 1
+                        }">
                         </div>
 
                         <div class="flex items-center gap-4">
@@ -509,11 +514,16 @@ onUnmounted(() => {
                                     <span class="text-base font-sans font-medium text-stone-400 ml-1">學分</span>
                                 </div>
                                 <div class="text-xs text-stone-400 uppercase tracking-widest font-medium mt-1">
-                                    <template v-if="rec.isCompleted">
+                                    <template v-if="rec.isRestricted">
+                                        <span
+                                            class="text-stone-600 font-bold inline-block text-left leading-[1.5]">身分限制</span>
+                                    </template>
+                                    <template v-else-if="rec.isCompleted">
                                         完成度 <span class="ml-1 text-emerald-600 font-bold">100%</span>
                                     </template>
                                     <template v-else-if="rec.completionRate >= 1">
-                                        <span class="text-amber-600 font-bold">尚有其他條件未滿足，點擊按鈕瞭解更多↗</span>
+                                        <span
+                                            class="text-amber-600 font-bold leading-[1.5]">尚有其他條件未滿足<br>點擊按鈕瞭解更多↗</span>
                                     </template>
                                     <template v-else>
                                         完成度 <span class="ml-1 text-emerald-600 font-bold">{{ (rec.completionRate *
