@@ -37,6 +37,7 @@ const showContactModal = ref(false); // 是否顯示聯絡我們 Modal
 const activeTab = ref('recommendation'); // 當前顯示的頁籤 ('recommendation' | 'check')
 const notification = ref({ show: false, message: '', type: 'success', action: null }); // 通知狀態
 const showScrollTop = ref(false); // 是否顯示回到頂部按鈕
+const showSelectedSidebar = ref(false); // 是否顯示已選學程側欄
 
 // --- 核心邏輯 ---
 
@@ -193,13 +194,13 @@ const addProgramToSelection = (id, name) => {
     if (!selectedProgramIds.value.includes(id)) {
         selectedProgramIds.value.push(id);
         showNotification(`已加入「${name}」`, 'success', {
-            text: '前往確認學程要求',
-            handler: () => { activeTab.value = 'check'; notification.value.show = false; }
+            text: '查看已選清單',
+            handler: () => { showSelectedSidebar.value = true; notification.value.show = false; }
         });
     } else {
         showNotification(`「${name}」已在清單中`, 'info', {
-            text: '前往確認學程要求',
-            handler: () => { activeTab.value = 'check'; notification.value.show = false; }
+            text: '查看已選清單',
+            handler: () => { showSelectedSidebar.value = true; notification.value.show = false; }
         });
     }
 };
@@ -336,6 +337,12 @@ const rankedRecommendations = computed(() => {
 
 const removeProgram = (id) => {
     selectedProgramIds.value = selectedProgramIds.value.filter(pid => pid !== id);
+};
+
+const confirmClearPrograms = () => {
+    if (confirm('確定要清空所有已選學程嗎？')) {
+        selectedProgramIds.value = [];
+    }
 };
 
 const closeAllModals = () => {
@@ -683,18 +690,6 @@ onUnmounted(() => {
                 <p id="programSelectionStatus" class="mt-4 text-sm text-rose-500 font-bold"
                     v-show="programSelectionStatus">{{
                         programSelectionStatus }}</p>
-
-                <!-- 顯示已選擇的學程 -->
-                <div v-if="selectedProgramsList.length > 0" class="mt-8 pt-6 border-t border-stone-100">
-                    <p class="text-lg font-bold text-emerald-800 mb-3 font-serif">已選擇的學程（點擊可取消）：</p>
-                    <div class="flex flex-wrap gap-2">
-                        <span v-for="p in selectedProgramsList" :key="p.id" @click="removeProgram(p.id)"
-                            class="px-4 py-1.5 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-full border border-emerald-100 shadow-sm cursor-pointer hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors flex items-center group">
-                            {{ p.name }}
-                            <span class="ml-2 text-xs opacity-50 group-hover:opacity-100">✕</span>
-                        </span>
-                    </div>
-                </div>
             </div>
 
             <div class="mb-8">
@@ -733,6 +728,59 @@ onUnmounted(() => {
         v-model:showCompletion="showCompletionModal" :completedPrograms="completedPrograms"
         v-model:showContact="showContactModal" v-model:showPrivacy="showPrivacyModal"
         v-model:showTerms="showTermsModal" />
+
+    <!-- Selected Programs Sidebar -->
+    <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+        <!-- Sidebar Panel -->
+        <div class="absolute top-24 bottom-48 right-0 flex max-w-full pl-10 pointer-events-none">
+            <div class="pointer-events-auto w-full max-w-md relative transform transition-transform duration-300 ease-in-out"
+                :class="showSelectedSidebar ? 'translate-x-0' : 'translate-x-full'">
+                <!-- Toggle Button (Combined Trigger & Retract) -->
+                <button @click="showSelectedSidebar = !showSelectedSidebar"
+                    class="absolute top-[calc(33vh-6rem)] -left-10 bg-white border-l-4 border-emerald-600 shadow-lg py-4 px-1 rounded-l-lg hover:bg-stone-50 transition-all flex flex-col items-center gap-2 z-50 w-10">
+                    <span class="writing-vertical-rl text-emerald-800 font-bold tracking-widest text-sm py-1"
+                        style="writing-mode: vertical-rl;">已選學程</span>
+                    <span
+                        class="bg-emerald-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                        {{ selectedProgramsList.length }}
+                    </span>
+                </button>
+
+                <div
+                    class="flex h-full flex-col overflow-y-scroll bg-white shadow-2xl border border-stone-200 rounded-l-2xl">
+                    <div class="relative pt-8 flex-1 px-4 sm:px-6">
+                        <ul role="list" class="space-y-3">
+                            <li v-for="p in selectedProgramsList" :key="p.id" @click="removeProgram(p.id)"
+                                class="bg-stone-50 rounded-xl p-4 border border-stone-100 shadow-sm flex justify-between items-center group hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer">
+                                <span class="font-bold text-stone-700 group-hover:text-rose-700 transition-colors">{{
+                                    p.name }}</span>
+                                <button
+                                    class="text-stone-400 hover:text-rose-600 p-1 rounded-full hover:bg-rose-100 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </li>
+                        </ul>
+                        <div v-if="selectedProgramsList.length === 0"
+                            class="text-center text-stone-400 mt-10 flex flex-col items-center">
+                            <span class="text-4xl mb-2">📭</span>
+                            <p>尚未選擇任何學程</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-stone-200 p-4 sm:px-6 bg-stone-50/50 flex flex-col gap-3">
+                        <button @click="confirmClearPrograms" v-if="selectedProgramsList.length > 0"
+                            class="w-full py-2 text-stone-400 hover:text-rose-500 text-sm font-bold transition-colors">
+                            清空所有已選學程
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Scroll to Top Button -->
     <Transition enter-active-class="transition ease-out duration-300"
