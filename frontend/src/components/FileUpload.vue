@@ -75,7 +75,8 @@ const triggerFileInput = () => {
 
         <div v-else
             class="w-full max-w-md mx-auto min-h-[140px] bg-white border-2 border-emerald-500/30 rounded-xl flex flex-col items-center justify-center p-6 shadow-sm">
-            <h3 class="text-2xl font-bold text-stone-800 font-serif mb-2 tracking-wide">{{ studentFile.name }}</h3>
+            <h3 class="text-lg md:text-xl lg:text-2xl font-bold text-stone-800 font-serif mb-2 tracking-wide break-all">
+                {{ studentFile.name }}</h3>
             <div class="flex items-center gap-3 mb-6">
                 <span class="px-3 py-1 bg-stone-100 text-stone-500 rounded-full text-xs font-mono font-bold">JSON</span>
                 <span class="text-stone-400 font-mono text-sm">{{ (studentFile.size / 1024).toFixed(2) }} KB</span>
