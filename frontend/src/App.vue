@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import CheckResultCard from './components/CheckResultCard.vue';
 import AppModals from './components/AppModals.vue';
+import FileUpload from './components/FileUpload.vue';
 
 // --- 狀態管理 ---
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || ''; // Go 後端服務地址
@@ -22,8 +23,9 @@ const studentFile = ref(null); // 上傳的 JSON 檔案
 const uploadStatus = ref(''); // 檔案上傳狀態訊息
 const programSelectionStatus = ref(''); // 學程選擇狀態訊息
 const checkResults = ref([]); // 檢核結果列表
+const currentPage = ref(1); // 當前頁碼
+const pageSize = ref(10); // 每頁顯示數量 (降低單頁渲染數以確保流暢度)
 const isChecking = ref(false); // 檢核按鈕 loading 狀態
-const showDownloadHelp = ref(false); // 是否顯示下載說明
 const showDisclaimerModal = ref(false); // 是否顯示免責聲明 Modal
 const showCompletionModal = ref(false); // 是否顯示達標恭喜 Modal
 const completedPrograms = ref([]); // 已達標的學程名稱列表
@@ -64,8 +66,7 @@ const loadPrograms = async () => {
 /**
  * 步驟 2: 處理檔案選擇
  */
-const handleFileChange = (event) => {
-    const file = event.target.files[0];
+const processFile = (file) => {
     studentFile.value = file;
     checkResults.value = []; // 清空結果
     recommendationResults.value = []; // 清空推薦結果
@@ -76,7 +77,7 @@ const handleFileChange = (event) => {
         return;
     }
 
-    if (file.type !== 'application/json') {
+    if (file.type !== 'application/json' && !file.name.toLowerCase().endsWith('.json')) {
         uploadStatus.value = '錯誤：請確保上傳的檔案是 JSON 格式 (.json)';
         studentFile.value = null;
         return;
@@ -127,6 +128,7 @@ const executeCheck = async () => {
         }
 
         checkResults.value = await response.json();
+        currentPage.value = 1;
         uploadStatus.value = `檢核完成。共檢核 ${checkResults.value.length} 個學程。`;
 
     } catch (error) {
@@ -281,6 +283,12 @@ const selectedProgramsList = computed(() => {
     return list;
 });
 
+const visibleCheckResults = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value;
+    const end = start + pageSize.value;
+    return checkResults.value.slice(start, end);
+});
+
 const rankedRecommendations = computed(() => {
     // 複製一份陣列以避免修改原始資料，並計算剩餘學分
     const list = recommendationResults.value.map(rec => {
@@ -335,13 +343,44 @@ const rankedRecommendations = computed(() => {
     });
 });
 
+const totalPages = computed(() => {
+    return Math.ceil(checkResults.value.length / pageSize.value);
+});
+
+const changePage = (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+        // 切換頁面後自動捲動到結果區頂部，避免使用者迷失方向
+        const resultsArea = document.getElementById('resultsArea');
+        if (resultsArea) resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+};
+
 const removeProgram = (id) => {
     selectedProgramIds.value = selectedProgramIds.value.filter(pid => pid !== id);
+
+    // 同步移除檢核結果
+    let programName = '';
+    for (const collegePrograms of Object.values(programsByCollege.value)) {
+        if (collegePrograms[id]) {
+            programName = collegePrograms[id].name;
+            break;
+        }
+    }
+
+    if (programName) {
+        checkResults.value = checkResults.value.filter(res => res.programName !== programName);
+        const maxPage = Math.ceil(checkResults.value.length / pageSize.value) || 1;
+        if (currentPage.value > maxPage) {
+            currentPage.value = maxPage;
+        }
+    }
 };
 
 const confirmClearPrograms = () => {
     if (confirm('確定要清空所有已選學程嗎？')) {
         selectedProgramIds.value = [];
+        checkResults.value = [];
     }
 };
 
@@ -390,34 +429,7 @@ onUnmounted(() => {
             上傳修課紀錄，即時分析與學程匹配度及修習進度，讓有興趣申請學程的您<br>不再因繁雜的學程規定卻步，掌握所有通過學程的先機
         </p>
 
-        <div
-            class="mb-10 p-8 border-2 border-dashed border-stone-200 bg-stone-50/50 rounded-2xl hover:bg-stone-100/50 transition-colors duration-300 animate-entry delay-100">
-            <h2 class="text-2xl font-bold text-stone-700 mb-4 flex items-center font-serif">
-                <span class="mr-3 text-3xl">📂</span> 上傳全人資料
-                <span @click="showDownloadHelp = !showDownloadHelp"
-                    class="ml-auto text-sm text-stone-500 cursor-pointer hover:text-stone-700 hover:underline transition-colors select-none font-sans font-medium">
-                    如何取得全人資料 JSON 檔案?
-                </span>
-            </h2>
-            <div v-if="showDownloadHelp"
-                class="mb-6 p-5 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm text-stone-600 leading-relaxed border border-stone-200">
-                <p class="mb-1"><span class="font-bold">Step 1️⃣：</span>進入政大首頁並且登入 iNCCU</p>
-                <p class="mb-1"><span class="font-bold">Step 2️⃣：</span>點選「<a
-                        href="https://i.nccu.edu.tw/sso_app/PersonalInfoSSO.aspx" target="_blank"
-                        class="text-emerald-600 hover:text-emerald-700 underline decoration-dotted transition-colors">進入我的全人</a>（點擊文字可直接前往全人系統）」
-                </p>
-                <p class="mb-1"><span class="font-bold">Step 3️⃣：</span>下滑到底，在「相關連結」找到「資料格式化匯出」選項，進入後選擇「課業學習」後下載</p>
-                <p><span class="font-bold">Step 4️⃣：</span>得到熱騰騰的🔥全人資料 JSON 檔案🔥！</p>
-            </div>
-            <input type="file" id="jsonFile" accept=".json" @change="handleFileChange"
-                @click="$event.target.value = null"
-                class="w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-stone-200 file:text-stone-700 hover:file:bg-stone-300 transition duration-150 cursor-pointer">
-            <p id="uploadStatus" class="mt-2 text-sm" :class="{
-                'text-emerald-600 font-medium': uploadStatus.includes('檔案已載入') || uploadStatus.includes('檢核完成'),
-                'text-rose-600 font-medium': uploadStatus.includes('錯誤'),
-                'text-stone-400': uploadStatus.includes('請先上傳')
-            }">{{ uploadStatus }}</p>
-        </div>
+        <FileUpload :studentFile="studentFile" @file-change="processFile" />
 
         <div class="flex items-center mb-6">
             <div class="flex-grow border-t border-gray-300"></div>
@@ -454,22 +466,26 @@ onUnmounted(() => {
             <div
                 class="bg-white/60 backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-white/50 shadow-xl shadow-stone-200/40">
                 <h2
-                    class="text-2xl sm:text-3xl font-bold text-emerald-900 mb-4 flex items-center font-serif tracking-wide">
+                    class="text-2xl sm:text-3xl font-bold text-emerald-900 mb-4 flex items-center justify-center font-serif tracking-wide">
                     智慧學程推薦排行榜
                 </h2>
                 <blockquote
-                    class="mb-8 border-l-4 border-emerald-100 pl-4 py-2 bg-stone-50/80 rounded-r-xl text-stone-700 text-center text-xl font-bold font-serif shadow-sm">
+                    class="mb-8 py-4 border-y-2 border-emerald-300 text-stone-500 text-center text-xl italic font-bold font-serif tracking-wider">
                     「錯失任何一個學程通過的機會是不可能的。」
                 </blockquote>
-                <p class="text-stone-600 mb-6 text-lg leading-relaxed">
-                    系統將比對您的修課紀錄與所有學程標準，推薦完成度較高的學程供您參考
+                <p class="text-stone-600 mb-6 text-lg leading-relaxed text-center">
+                    系統將交叉比對您的修課紀錄與所有學程標準，推薦對您較容易完成的學程供您參考
                 </p>
 
                 <button @click="startRecommendation" :disabled="!studentFile || isRecommending"
-                    class="mb-8 px-8 py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-lg rounded-2xl shadow-lg shadow-emerald-900/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transform active:scale-95">
-                    <span v-if="isRecommending" class="mr-2">
-                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24">
+                    class="group relative mb-8 px-12 py-4 bg-stone-900 font-bold text-lg rounded-full border border-emerald-500/50 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto tracking-[0.2em] overflow-hidden"
+                    :class="studentFile ? 'text-emerald-400 hover:bg-stone-800 shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] transform hover:-translate-y-1 active:scale-95' : 'text-stone-600'">
+                    <div v-if="studentFile"
+                        class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out">
+                    </div>
+                    <span v-if="isRecommending" class="mr-3 relative z-10">
+                        <svg class="animate-spin h-5 w-5 text-emerald-400" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
                             </circle>
                             <path class="opacity-75" fill="currentColor"
@@ -477,7 +493,7 @@ onUnmounted(() => {
                             </path>
                         </svg>
                     </span>
-                    {{ isRecommending ? '分析中...' : '啟動推薦分析' }}
+                    <span class="relative z-10">{{ isRecommending ? '深度分析中...' : '啟動智慧推薦' }}</span>
                 </button>
 
                 <div v-if="hasRunRecommendation" class="space-y-4 mt-2">
@@ -705,7 +721,43 @@ onUnmounted(() => {
                     <p v-if="checkResults.length === 0 && !isChecking" class="text-stone-400 text-center py-10">
                         檢核結果將顯示在此處</p>
 
-                    <CheckResultCard v-for="result in checkResults" :key="result.programName" :result="result" />
+                    <!-- 上方分頁控制 -->
+                    <div v-if="checkResults.length > pageSize"
+                        class="flex flex-col sm:flex-row justify-center items-center gap-4 pb-4">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
+                            class="px-6 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl shadow-sm transition-all hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            ← 上一頁
+                        </button>
+
+                        <span class="text-stone-600 font-bold font-serif text-lg">第 {{ currentPage }} 頁 / 共 {{
+                            totalPages }}
+                            頁</span>
+
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages"
+                            class="px-6 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl shadow-sm transition-all hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            下一頁 →
+                        </button>
+                    </div>
+
+                    <CheckResultCard v-for="result in visibleCheckResults" :key="result.programName" :result="result" />
+
+                    <!-- 分頁控制 -->
+                    <div v-if="checkResults.length > pageSize"
+                        class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6 pb-2">
+                        <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1"
+                            class="px-6 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl shadow-sm transition-all hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            ← 上一頁
+                        </button>
+
+                        <span class="text-stone-600 font-bold font-serif text-lg">第 {{ currentPage }} 頁 / 共 {{
+                            totalPages }}
+                            頁</span>
+
+                        <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages"
+                            class="px-6 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl shadow-sm transition-all hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            下一頁 →
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -730,7 +782,8 @@ onUnmounted(() => {
         v-model:showTerms="showTermsModal" />
 
     <!-- Selected Programs Sidebar -->
-    <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+    <div class="fixed inset-0 z-50 pointer-events-none overflow-hidden"
+        v-if="activeTab === 'check' || hasRunRecommendation">
         <!-- Sidebar Panel -->
         <div class="absolute top-24 bottom-48 right-0 flex max-w-full pl-10 pointer-events-none">
             <div class="pointer-events-auto w-full max-w-md relative transform transition-transform duration-300 ease-in-out"
@@ -738,10 +791,11 @@ onUnmounted(() => {
                 <!-- Toggle Button (Combined Trigger & Retract) -->
                 <button @click="showSelectedSidebar = !showSelectedSidebar"
                     class="absolute top-[calc(33vh-6rem)] -left-10 bg-white border-l-4 border-emerald-600 shadow-lg py-4 px-1 rounded-l-lg hover:bg-stone-50 transition-all flex flex-col items-center gap-2 z-50 w-10">
-                    <span class="writing-vertical-rl text-emerald-800 font-bold tracking-widest text-sm py-1"
+                    <span
+                        class="writing-vertical-rl text-emerald-800 font-black tracking-widest text-sm py-1 font-serif"
                         style="writing-mode: vertical-rl;">已選學程</span>
                     <span
-                        class="bg-emerald-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                        class="bg-emerald-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-sm font-serif">
                         {{ selectedProgramsList.length }}
                     </span>
                 </button>
@@ -772,6 +826,11 @@ onUnmounted(() => {
                         </div>
                     </div>
                     <div class="border-t border-stone-200 p-4 sm:px-6 bg-stone-50/50 flex flex-col gap-3">
+                        <button v-if="activeTab === 'recommendation' && selectedProgramsList.length > 0"
+                            @click="activeTab = 'check'"
+                            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
+                            <span>✏️</span> 前往確認學程要求
+                        </button>
                         <button @click="confirmClearPrograms" v-if="selectedProgramsList.length > 0"
                             class="w-full py-2 text-stone-400 hover:text-rose-500 text-sm font-bold transition-colors">
                             清空所有已選學程

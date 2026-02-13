@@ -1,130 +1,201 @@
 <script setup>
-defineProps({
+import { ref, computed } from 'vue';
+
+const props = defineProps({
     result: {
         type: Object,
         required: true
     }
 });
+
+const isOpen = ref(false);
+
+const toggleDetails = () => {
+    isOpen.value = !isOpen.value;
+};
+
+const progressPercentage = computed(() => {
+    if (!props.result.minRequiredCredits) return 0;
+    const pct = (props.result.totalPassedCredits / props.result.minRequiredCredits) * 100;
+    return Math.min(pct, 100);
+});
 </script>
 
 <template>
-    <div class="border-2 p-5 rounded-xl shadow-md"
-        :class="result.isCompleted ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900' : 'bg-rose-50/80 border-rose-200 text-rose-900'">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-black/5">
-            <h3 class="text-2xl font-bold font-serif tracking-wide">{{ result.programName }}</h3>
-            <span
-                class="mt-2 sm:mt-0 px-4 py-1.5 text-sm font-bold rounded-full border shadow-sm inline-block text-center"
-                :class="result.isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'">
-                {{ result.isCompleted ? '✓ 已修畢' : '✗ 未修畢' }}
-            </span>
+    <div class="group relative bg-white rounded-2xl border border-stone-200 overflow-hidden">
+
+        <!-- Status Indicator Strip -->
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300"
+            :class="result.isCompleted ? 'bg-emerald-500' : 'bg-rose-400'"></div>
+
+        <!-- Main Summary Card (Clickable) -->
+        <div class="p-6 select-none relative z-10">
+            <div class="flex justify-between items-start gap-4">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span v-if="result.type === 'micro'"
+                            class="px-2 py-0.5 rounded text-sm font-bold uppercase tracking-wider bg-stone-100 text-stone-500">微學程</span>
+                        <h3 class="text-xl font-bold font-serif text-stone-800 leading-tight">
+                            {{ result.programName }}
+                        </h3>
+                    </div>
+                    <p class="text-sm text-stone-500 font-medium">{{ result.programDescription }}</p>
+                </div>
+
+                <!-- Status Icon -->
+                <div class="flex-shrink-0">
+                    <div class="px-3 py-1.5 rounded-full flex items-center justify-center gap-2 transition-colors duration-300"
+                        :class="result.isCompleted ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-50 text-rose-500'">
+                        <span class="font-bold">{{ result.isCompleted ? '✓' : '!' }}</span>
+                        <span class="font-bold text-sm">{{ result.isCompleted ? '已修畢' : '未修畢' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mt-6">
+                <div class="flex justify-between text-sm font-bold uppercase tracking-wider text-stone-400 mb-2">
+                    <span>修習進度</span>
+                    <span class="font-mono" :class="result.isCompleted ? 'text-emerald-600' : 'text-stone-600'">
+                        {{ result.totalPassedCredits }} / {{ result.minRequiredCredits }} 學分
+                    </span>
+                </div>
+                <div class="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                    <div class="h-full transition-all duration-1000 ease-out rounded-full relative"
+                        :class="result.isCompleted ? 'bg-emerald-500' : 'bg-stone-800'"
+                        :style="{ width: `${progressPercentage}%` }">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expand/Collapse Indicator -->
+            <div @click="toggleDetails" class="flex justify-center mt-4 -mb-2 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-stone-400 transition-transform duration-300"
+                    :class="{ 'rotate-180': isOpen }" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
         </div>
 
-        <p class="text-stone-700 mb-6 leading-relaxed">{{ result.programDescription }}</p>
+        <!-- Detailed Breakdown (Collapsible) -->
+        <div v-show="isOpen" class="bg-stone-50/80 border-t border-stone-100 p-6 animate-fade-in">
 
-        <!-- 顯示資格限制訊息 -->
-        <div v-if="result.restrictionMessage"
-            class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 rounded-r-lg shadow-sm">
-            <div class="flex items-start">
-                <span class="text-2xl mr-3">🚫</span>
+            <!-- Restrictions Alert -->
+            <div v-if="result.restrictionMessage"
+                class="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl flex gap-3 items-start">
+                <span class="text-lg">🚫</span>
                 <div>
-                    <h4 class="font-bold text-lg mb-1">資格限制</h4>
-                    <p>{{ result.restrictionMessage }}</p>
+                    <h4 class="font-bold text-rose-800 text-sm uppercase tracking-wider mb-1">資格限制</h4>
+                    <p class="text-rose-700 text-sm leading-relaxed">{{ result.restrictionMessage }}</p>
                 </div>
             </div>
-        </div>
 
-        <div class="mb-6 p-5 bg-white/60 rounded-xl border border-black/5 backdrop-blur-sm">
-            <h4 class="text-lg font-bold text-stone-800 mb-3 font-serif">學程總學分要求</h4>
-            <div class="flex justify-between text-sm">
-                <span class="font-medium text-stone-600">應修總學分:</span>
-                <span class="font-mono text-base"
-                    :class="result.totalCreditsMet ? 'text-emerald-700 font-bold' : 'text-rose-700'">{{
-                        result.minRequiredCredits }} 學分</span>
+            <!-- Average Score Check -->
+            <div v-if="result.avgScoreRequired && result.totalCreditsMet"
+                class="mb-6 p-4 bg-white border border-stone-200 rounded-xl shadow-sm flex justify-between items-center">
+                <div>
+                    <span class="font-bold text-stone-700 text-sm">平均成績檢核</span>
+                    <span class="text-sm text-stone-500 ml-2">(標準: {{ result.avgScoreThreshold }} 分)</span>
+                </div>
+                <div>
+                    <span class="font-mono font-bold text-lg"
+                        :class="result.avgScoreMet ? 'text-emerald-600' : 'text-rose-600'">
+                        {{ result.avgScore }}
+                    </span>
+                    <span class="text-sm font-bold ml-1"
+                        :class="result.avgScoreMet ? 'text-emerald-600' : 'text-rose-600'">分</span>
+                </div>
             </div>
-            <div class="flex justify-between text-sm">
-                <span class="font-medium text-stone-600">已通過學分:</span>
-                <span class="font-mono text-base"
-                    :class="result.totalCreditsMet ? 'text-emerald-700 font-bold' : 'text-rose-700'">{{
-                        result.totalPassedCredits }} 學分</span>
-            </div>
-            <p class="mt-3 text-xl font-bold uppercase tracking-wide"
-                :class="result.totalCreditsMet ? 'text-emerald-600' : 'text-rose-600'">
-                {{ result.totalCreditsMet ? '已達成' : '尚未達成' }}
-            </p>
-        </div>
 
-        <h4 class="text-lg font-bold text-stone-800 mb-4 font-serif">分項要求</h4>
+            <!-- Categories Grid -->
+            <div class="space-y-4">
+                <div v-for="cat in result.categoryResults" :key="cat.category"
+                    class="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
 
-        <div v-for="cat in result.categoryResults" :key="cat.category" class="mb-4 p-4 rounded-xl border transition-all"
-            :class="((cat.requiredCount > 0 || cat.requiredCredits > 0) ? cat.isMet : result.isCompleted) ? 'border-emerald-200 bg-emerald-50/50 text-emerald-900' : 'border-rose-200 bg-rose-50/50 text-rose-900'">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center text-sm font-bold mb-2">
-                <span>{{ cat.category }}</span>
-                <div class="text-left sm:text-right mt-1 sm:mt-0 font-mono text-xs sm:text-sm opacity-80">
-                    <div v-if="cat.requiredCount > 0">
-                        {{ cat.passedCount }} / {{ cat.requiredCount }} {{
-                            cat.category.includes('跨群選修要求') ? '群'
-                                : '門' }}
+                    <!-- Category Header -->
+                    <div class="p-4 flex justify-between items-center bg-stone-50/50 border-b border-stone-100">
+                        <h4 class="font-bold text-stone-800 text-sm">{{ cat.category }}</h4>
+                        <div class="flex items-center gap-2">
+                            <span v-if="cat.limitExceeded"
+                                class="text-sm font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                                ⚠️ {{ cat.exceededMessage }}
+                            </span>
+                            <span v-if="cat.requiredCount > 0 || cat.requiredCredits > 0"
+                                class="px-2 py-1 rounded text-sm font-bold"
+                                :class="cat.isMet ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'">
+                                {{ cat.isMet ? '已通過' : '未通過' }}
+                            </span>
+                        </div>
                     </div>
-                    <div v-if="cat.requiredCredits > 0">
-                        {{ cat.passedCredits.toFixed(1) }} / {{ cat.requiredCredits.toFixed(1) }} 學分
-                    </div>
-                    <div v-if="cat.requiredCount === 0 && cat.requiredCredits === 0">
-                        門數/學分無要求下限 (依總學分認定)
+
+                    <!-- Category Content -->
+                    <div class="p-4">
+                        <div class="flex justify-between text-sm font-mono text-stone-500 mb-3">
+                            <span>
+                                <span v-if="cat.requiredCount > 0">要求: {{ cat.requiredCount }} 門</span>
+                                <span v-if="cat.requiredCredits > 0" class="ml-2">要求: {{ cat.requiredCredits }}
+                                    學分</span>
+                            </span>
+                            <span
+                                :class="((cat.requiredCount > 0 || cat.requiredCredits > 0) && cat.isMet) ? 'text-emerald-600 font-bold' : 'text-stone-800'">
+                                {{ cat.passedCredits.toFixed(1) }} 學分 / {{ cat.passedCount }} 門
+                            </span>
+                        </div>
+
+                        <!-- Course List -->
+                        <ul class="space-y-1">
+                            <li v-if="cat.passedCourses.length === 0" class="text-sm text-stone-400 italic py-1">
+                                無符合課程
+                            </li>
+                            <li v-for="c in cat.passedCourses" :key="c.name + c.semester"
+                                class="flex justify-between items-center text-sm py-1.5 px-2 rounded hover:bg-stone-50 transition-colors group/item">
+                                <span class="font-medium text-stone-700 truncate pr-2">{{ c.name }}</span>
+                                <div
+                                    class="flex items-center gap-2 shrink-0 opacity-70 group-hover/item:opacity-100 transition-opacity">
+                                    <span class="font-mono text-sm text-stone-500"><span class="font-bold text-stone-700">{{ c.credit }} 學分</span> / {{ c.score }}</span>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
-            <div v-if="cat.limitExceeded"
-                class="text-xs font-bold text-amber-600 mt-2 flex items-center bg-amber-50 p-1.5 rounded">
-                <span class="mr-1">⚠️</span>
-                {{ cat.exceededMessage }}
+
+            <!-- In Progress Section -->
+            <div v-if="result.inProgressCourses && result.inProgressCourses.length > 0" class="mt-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="h-px flex-1 bg-amber-200"></div>
+                    <span class="text-sm font-bold text-amber-600 uppercase tracking-widest">修習中課程</span>
+                    <div class="h-px flex-1 bg-amber-200"></div>
+                </div>
+                <div class="bg-amber-50 rounded-xl border border-amber-100 p-1">
+                    <div v-for="c in result.inProgressCourses" :key="c.name"
+                        class="flex justify-between items-center p-2 text-sm text-amber-900/70 hover:bg-amber-100/50 rounded-lg transition-colors">
+                        <span class="font-medium">{{ c.name }}</span>
+                        <span class="font-mono text-sm">{{ c.credit }} 學分</span>
+                    </div>
+                </div>
             </div>
-            <p v-if="cat.requiredCount > 0 || cat.requiredCredits > 0" class="text-xs mt-1 opacity-70">
-                狀態: <span class="font-bold uppercase">{{
-                    cat.isMet ? '已達成' : '未達成' }}</span>
-            </p>
-            <div v-if="cat.category !== '群A + 群B 總修習門數' && cat.category !== '跨群選修要求 (A-D群至少兩群)'"
-                class="mt-3 text-xs text-stone-600">
-                <p class="font-bold mb-1 opacity-70">已通過課程 ({{ cat.passedCourses.length }}):</p>
-                <ul
-                    class="list-none space-y-1 max-h-32 overflow-y-auto custom-scrollbar bg-white/60 p-2 rounded border border-black/5">
-                    <li v-if="cat.passedCourses.length === 0" class="italic opacity-50">無符合要求的課程</li>
-                    <li v-for="c in cat.passedCourses" :key="c.name + c.semester">{{ c.name }} ({{
-                        c.credit.toFixed(1) }} 學分<span v-if="c.isCapped" class="text-amber-600 font-bold ml-1"
-                            title="此課程因超過上限而被調整學分">*</span>, {{
-                                c.score }} 分)</li>
-                </ul>
-            </div>
-        </div>
 
-        <!-- 平均成績檢核區塊 (僅針對特定學程顯示) -->
-        <div v-if="result.avgScoreRequired && result.totalCreditsMet"
-            class="mb-4 p-4 bg-white/60 rounded-xl border border-black/5 backdrop-blur-sm">
-            <div class="flex justify-between">
-                <span class="font-medium text-md font-bold text-stone-600">認列課程平均成績：</span>
-                <span class="font-mono text-sm" :class="result.avgScoreMet ? 'text-emerald-700 font-bold' : 'text-rose-700'">{{
-                    result.avgScore }} 分</span>
-            </div>
-            <p class="mt-2 text-large font-bold" :class="result.avgScoreMet ? 'text-emerald-600' : 'text-rose-600'">
-                {{ result.avgScoreMet ? `已達 ${result.avgScoreThreshold} 分標準` : `未達
-                ${result.avgScoreThreshold} 分標準` }}
-            </p>
-        </div>
-
-        <div v-if="result.inProgressCourses && result.inProgressCourses.length > 0"
-            class="mt-6 p-4 border border-amber-300 bg-amber-50/80 rounded-xl">
-
-            <h4 class="text-lg font-bold text-amber-900 mb-2 flex items-center">
-                <span class="mr-2">⏳</span>
-                修習中課程 ({{ result.inProgressCourses ? result.inProgressCourses.length : 0 }} 門)
-            </h4>
-
-            <p class="text-sm text-amber-800 mb-2">以下課程成績尚未送達，若及格可能影響學程完成狀態：</p>
-            <ul
-                class="list-disc list-inside ml-2 text-sm text-amber-900 max-h-32 overflow-y-auto custom-scrollbar bg-white/60 p-2 rounded border border-amber-200">
-                <li v-for="c in result.inProgressCourses" :key="c.name + c.semester">
-                    {{ c.name }} ({{ c.credit.toFixed(1) }} 學分) - {{ c.semester }}
-                </li>
-            </ul>
         </div>
     </div>
 </template>
+
+<style scoped>
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
