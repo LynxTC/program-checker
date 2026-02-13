@@ -58,7 +58,7 @@ const triggerFileInput = () => {
         </div>
 
         <div v-if="!studentFile" @click="triggerFileInput"
-            class="w-full max-w-md mx-auto min-h-[140px] border-2 border-dashed border-stone-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-white transition-all group relative z-10 bg-white/40">
+            class="w-full max-w-md mx-auto min-h-[140px] border-2 border-dashed border-stone-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-white transition-all group relative z-10 bg-white/40 p-6">
             <div
                 class="w-14 h-14 bg-stone-100 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform group-hover:bg-emerald-100 duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg"
