@@ -423,10 +423,10 @@ onUnmounted(() => {
     <div class="max-w-5xl mx-auto glass-panel rounded-3xl p-8 sm:p-12 my-8 sm:my-12 animate-entry">
         <h1
             class="text-2xl sm:text-4xl md:text-5xl font-bold text-center text-emerald-900 mb-4 tracking-wide font-serif whitespace-nowrap">
-            政大 學程推薦＆檢核
+            政大 學程潛能分析師
         </h1>
         <p class="text-stone-600 mb-10 text-center text-lg max-w-2xl mx-auto leading-relaxed">
-            上傳修課紀錄，即時分析與學程匹配度及修習進度，讓有興趣申請學程的您<br>不再因繁雜的學程規定卻步，掌握所有通過學程的先機
+            上傳修課紀錄，即時分析與學程匹配度及修習進度<br>不再錯過任何一個學程的申請，掌握所有通過學程的良機
         </p>
 
         <FileUpload :studentFile="studentFile" @file-change="processFile" />
@@ -437,8 +437,8 @@ onUnmounted(() => {
                 <span class="flex-shrink-0 mr-2">⬇️</span>
                 <span
                     class="flex flex-wrap justify-center gap-x-1 sm:gap-x-2 font-normal font-serif text-sm sm:text-lg">
-                    <span class="whitespace-nowrap">由 <span class="font-[750]">系統智慧推薦</span> 最適合您的學程</span>
-                    <span class="whitespace-nowrap">或是選擇個別學程 <span class="font-[750]">查看修習進度</span></span>
+                    <span class="whitespace-nowrap">由 <span class="font-[750]">分析師智慧推薦</span> 最適合您的學程</span>
+                    <span class="whitespace-nowrap">或選擇個別學程 <span class="font-[750]">查看修習進度</span></span>
                 </span>
                 <span class="flex-shrink-0 ml-2">⬇️</span>
             </div>
@@ -471,14 +471,14 @@ onUnmounted(() => {
                 </h2>
                 <blockquote
                     class="mb-8 py-4 border-y-2 border-emerald-300 text-stone-500 text-center text-xl italic font-bold font-serif tracking-wider">
-                    「錯失任何一個學程通過的機會是不可能的。」
+                    「你的學分比你想像的更有價值。」
                 </blockquote>
                 <p class="text-stone-600 mb-6 text-lg leading-relaxed text-center">
-                    系統將交叉比對您的修課紀錄與所有學程標準，推薦對您較容易完成的學程供您參考
+                    分析師將交叉比對您的修課紀錄與所有學程標準，找出您已具備資格或高潛力的學程
                 </p>
 
                 <button @click="startRecommendation" :disabled="!studentFile || isRecommending"
-                    class="group relative mb-8 px-12 py-4 bg-stone-900 font-bold text-lg rounded-full border border-emerald-500/50 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto tracking-[0.2em] overflow-hidden"
+                    class="group relative mb-8 px-12 py-4 bg-stone-900 font-bold text-lg rounded-xl border border-emerald-500/50 transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center mx-auto tracking-[0.2em] overflow-hidden"
                     :class="studentFile ? 'text-emerald-400 hover:bg-stone-800 shadow-[0_0_20px_rgba(52,211,153,0.3)] hover:shadow-[0_0_35px_rgba(52,211,153,0.6)] transform hover:-translate-y-1 active:scale-95' : 'text-stone-600'">
                     <div v-if="studentFile"
                         class="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out">
@@ -493,7 +493,7 @@ onUnmounted(() => {
                             </path>
                         </svg>
                     </span>
-                    <span class="relative z-10">{{ isRecommending ? '深度分析中...' : '啟動智慧推薦' }}</span>
+                    <span class="relative z-10">{{ isRecommending ? '深度分析中...' : '開始智慧推薦' }}</span>
                 </button>
 
                 <div v-if="hasRunRecommendation" class="space-y-4 mt-2">

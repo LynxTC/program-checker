@@ -29,7 +29,7 @@ const emit = defineEmits([
                 <span class="text-amber-500 mr-2">⚠️</span> 注意事項
             </h3>
             <p class="text-stone-600 mb-8 leading-relaxed">
-                本系統分析結果僅供參考<br>可能因申請年度不同或修習同名非認列課程產生誤差<br><br>
+                分析師提供結果僅供參考<br>可能因申請年度不同或修習同名非認列課程產生誤差<br><br>
                 <span
                     class="font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded whitespace-nowrap text-xs sm:text-base">實際修習狀態以學程設置單位認定為準</span>
             </p>
@@ -126,7 +126,7 @@ const emit = defineEmits([
             </div>
             <div class="p-6 sm:p-8 overflow-y-auto">
                 <div class="text-stone-600 space-y-4 leading-relaxed text-justify">
-                    <p>歡迎您使用「國立政治大學學程修習推薦暨檢核工具」（以下簡稱本工具）。本工具由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了讓您能夠安心使用本工具的各項服務與資訊，特此向您說明本工具的隱私權保護政策，以保障您的權益，請您詳閱下列內容：
+                    <p>歡迎您使用「國立政治大學學程潛能分析師」（以下簡稱本工具）。本工具由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了讓您能夠安心使用本工具的各項服務與資訊，特此向您說明本工具的隱私權保護政策，以保障您的權益，請您詳閱下列內容：
                     </p>
 
                     <h4 class="font-bold text-emerald-800 text-lg mt-4">一、隱私權保護政策的適用範圍</h4>
@@ -167,7 +167,7 @@ const emit = defineEmits([
             </div>
             <div class="p-6 sm:p-8 overflow-y-auto">
                 <div class="text-stone-600 space-y-4 leading-relaxed text-justify">
-                    <p>歡迎使用「國立政治大學學程修習推薦暨檢核工具」（以下簡稱本服務）。本服務由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了保障您的權益，請詳細閱讀本服務條款。</p>
+                    <p>歡迎使用「國立政治大學學程潛能分析師」（以下簡稱本服務）。本服務由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了保障您的權益，請詳細閱讀本服務條款。</p>
 
                     <h4 class="font-bold text-emerald-800 text-lg mt-4">一、認知與接受條款</h4>
                     <p>當您開始使用本服務時，即表示您已閱讀、瞭解並同意接受本服務條款之所有內容。若您不同意本服務條款的任何部分，請立即停止使用本服務。</p>
