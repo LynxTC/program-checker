@@ -869,51 +869,38 @@
         },
         "CFA": {
             "name": "CFA核心學程",
-            "min_credits": 13.0,
-            "description": "修習認列科目達 13 學分（必修 4 + 選修 9），且認列學分分數平均達 80 分，需先修財管系大一二必修",
-            "url": "https://finance.nccu.edu.tw/zh_tw/Curriculum/admission_06/113%E5%AD%B8%E5%B9%B4%E5%BA%A6%E8%B2%A1%E7%AE%A1%E7%B3%BB%E5%AD%B8%E5%A3%AB%E7%8F%ADCFA%E6%A0%B8%E5%BF%83%E5%AD%B8%E7%A8%8B%E7%94%B3%E8%AB%8B%E5%85%AC%E5%91%8A-%E6%94%B6%E4%BB%B6%E6%88%AA%E6%AD%A2%E6%97%A5-113-04-08-26365705",
+            "min_credits": 21.0,
+            "description": "修習認列科目達 21 學分（必修 12 + 選修 9），且認列學分分數平均達 80 分",
+            "url": "https://finance.nccu.edu.tw/zh_tw/news/114%E5%AD%B8%E5%B9%B4%E5%BA%A6%E8%B2%A1%E7%AE%A1%E7%B3%BB%E5%AD%B8%E5%A3%AB%E7%8F%ADCFA%E6%A0%B8%E5%BF%83%E5%AD%B8%E7%A8%8B%E7%94%B3%E8%AB%8B%E5%85%AC%E5%91%8A-%E6%94%B6%E4%BB%B6%E6%88%AA%E6%AD%A2%E6%97%A5-114-04-30-46758350",
             "requirements": [
                 {
-                    "category": "先修課程",
-                    "min_credits": 36.0,
+                    "category": "必修課程",
+                    "min_credits": 6.0,
                     "courses": [
-                        "微積分",
-                        "經濟學",
-                        "初級會計學（一）",
-                        "統計學（一）",
-                        "初級會計學（二）",
-                        "統計學（二）",
-                        "中級會計學（一）",
                         "財務管理",
-                        "中級會計學（二）",
                         "投資學"
                     ]
                 },
                 {
-                    "category": "先修課程：商事法/民法概要",
-                    "min_credits": 2.0,
+                    "category": "必修課程：中級會計學",
+                    "min_credits": 6.0,
                     "courses": [
-                        "商事法",
-                        "民法概要"
-                    ]
-                },
-                {
-                    "category": "必修課程",
-                    "min_credits": 4.0,
-                    "courses": [
-                        "財務報表分析",
-                        "社會責任與倫理"
+                        "中級會計學（一）",
+                        "中級會計學（二）",
+                        "中級會計學（三）"
                     ]
                 },
                 {
                     "category": "選修課程",
                     "min_credits": 9.0,
                     "courses": [
+                        "財務報表分析",
                         "債券市場",
                         "企業評價",
                         "證券分析",
                         "投資組合管理",
-                        "資產配置"
+                        "資產配置",
+                        "國際財務管理"
                     ]
                 }
             ]
