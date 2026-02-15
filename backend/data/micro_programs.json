@@ -4,6 +4,7 @@
             "name": "圖書資料科學微學程",
             "min_credits": 9.0,
             "description": "修習認列科目至少 3 門（達 9 學分）",
+            "url": "https://ncculias.nccu.edu.tw/PageDoc/Detail?fid=12090&id=23915",
             "requirements": [
                 {
                     "category": "選修課程 (Min 9 學分)",
@@ -27,6 +28,7 @@
             "name": "人文學英語微學程",
             "min_credits": 8.0,
             "description": "任選文學院歷年或未來開設之英語課程8學分（僅供檢核113學年度之前課程）",
+            "url": "https://la.nccu.edu.tw/PageDoc/Detail?fid=13210&id=30867",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -64,6 +66,7 @@
             "name": "現象學與人文社會科學微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://thinker.nccu.edu.tw/PageDoc/Detail?fid=13743&id=33405",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -93,6 +96,7 @@
             "name": "東亞實踐智慧微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://thinker.nccu.edu.tw/PageDoc/Detail?fid=13742&id=33404",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -120,6 +124,7 @@
             "name": "AI與人文世界微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分（基礎至少6 + 進階至少3）",
+            "url": "https://thinker.nccu.edu.tw/PageDoc/Detail?fid=13794&id=34328",
             "requirements": [
                 {
                     "category": "基礎課程",
@@ -153,6 +158,7 @@
             "name": "華語文教學微學程",
             "min_credits": 9.0,
             "description": "三大領域各自皆須至少修畢 1 門",
+            "url": "https://tcsl.nccu.edu.tw/PageDoc/Detail?fid=13796&id=34405",
             "requirements": [
                 {
                     "category": "漢語語言學領域",
@@ -189,6 +195,7 @@
             "name": "身體、性別與醫療微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://history.nccu.edu.tw/PageDoc/Detail?fid=13864&id=35041",
             "general_education_courses": [
                 "中國醫學與養生文化",
                 "美國運動史",
@@ -216,6 +223,7 @@
             "name": "移民、海洋與國際互動微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（必修 3 + 選修 6，必修至多兩門）",
+            "url": "https://history.nccu.edu.tw/PageDoc/Detail?fid=13865&id=35042",
             "general_education_courses": [
                 "西方眼中的中國與臺灣"
             ],
@@ -256,6 +264,7 @@
             "name": "宗教跨域交流微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://history.nccu.edu.tw/PageDoc/Detail?fid=13867&id=35044",
             "general_education_courses": [
                 "解密生命樹：基督宗教傳統的跨時空之旅",
                 "宗教朝聖與靈性旅遊",
@@ -284,6 +293,7 @@
             "name": "常民、社會與文化資產微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://history.nccu.edu.tw/PageDoc/Detail?fid=13866&id=35043",
             "general_education_courses": [
                 "古代希臘的歷史與文化",
                 "認識故宮名畫",
@@ -314,6 +324,7 @@
             "name": "台灣歷史與社會微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分",
+            "url": "https://taiwan.nccu.edu.tw/PageDoc/Detail?fid=13896&id=35162",
             "general_education_courses": [
                 "近代臺灣歷史與人物",
                 "自我．身體．文化",
@@ -348,6 +359,7 @@
             "name": "敘事與創造力微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（基礎與應用課程二類各至少修習一科）",
+            "url": "https://chinese.nccu.edu.tw/PageDoc/Detail?fid=13907&id=35389",
             "requirements": [
                 {
                     "category": "敘事力課程（基礎）",
@@ -377,6 +389,7 @@
             "name": "古代經典與當代闡釋微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://chinese.nccu.edu.tw/PageDoc/Detail?fid=13907&id=35392",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -400,6 +413,7 @@
             "name": "國土計畫微學程",
             "min_credits": 9.0,
             "description": "必修 4 學分 + 選修 5 學分",
+            "url": "https://landeconomics.nccu.edu.tw/PageDocAll/Detail?fid=1572&id=28571",
             "requirements": [
                 {
                     "category": "基礎課程（必修）",
@@ -425,6 +439,7 @@
             "name": "全英語人工智慧微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（基礎 3 + 進階或應用 6）",
+            "url": "https://css.nccu.edu.tw/%E5%85%AC%E5%91%8A/elementor-16038/",
             "requirements": [
                 {
                     "category": "群A：核心",
@@ -455,6 +470,7 @@
             "name": "博物館微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（須至少含一門「博物館學群」課程）",
+            "url": "http://museumprogram.nccu.edu.tw/pages/news_20251202-1.html",
             "requirements": [
                 {
                     "category": "博物館學群",
@@ -499,6 +515,7 @@
             "name": "商業分析微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分，另需先修畢「經濟學」一學年",
+            "url": "https://ib.nccu.edu.tw/zh_tw/Programs/Microprogram/BusinessAnalysis/-%E5%95%86%E6%A5%AD%E5%88%86%E6%9E%90%E5%BE%AE%E5%AD%B8%E7%A8%8B-%E4%BF%AE%E7%BF%92%E7%A7%91%E7%9B%AE%E4%B8%80%E8%A6%BD%E8%A1%A8-47461076",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -523,6 +540,7 @@
             "name": "商情預測與財務分析微學程",
             "min_credits": 12.0,
             "description": "至少修滿群A 6 學分 + 群B 6 學分，並先修畢「統計學（一）或統計學（二）」、「總體經濟學」及「財務管理」各3學分以上",
+            "url": "https://ib.nccu.edu.tw/zh_tw/Programs/Microprogram/BusinessAnalytics/-%E5%95%86%E6%83%85%E9%A0%90%E6%B8%AC%E8%88%87%E8%B2%A1%E5%8B%99%E5%88%86%E6%9E%90%E5%BE%AE%E5%AD%B8%E7%A8%8B-%E4%BF%AE%E7%BF%92%E7%A7%91%E7%9B%AE%E4%B8%80%E8%A6%BD%E8%A1%A8-82749816",
             "requirements": [
                 {
                     "category": "先修課程：統計學",
@@ -571,6 +589,7 @@
             "name": "國際經貿法微學程",
             "min_credits": 9.0,
             "description": "修滿基礎、進階、應用科目各 3 學分",
+            "url": "https://ib.nccu.edu.tw/zh_tw/Programs/Microprogram/InternationalEconomicTradeLaw/-%E5%9C%8B%E9%9A%9B%E7%B6%93%E8%B2%BF%E6%B3%95%E5%BE%AE%E5%AD%B8%E7%A8%8B-%E4%BF%AE%E7%BF%92%E7%A7%91%E7%9B%AE%E4%B8%80%E8%A6%BD%E8%A1%A8-82108131",
             "requirements": [
                 {
                     "category": "基礎課程 (Min 3 學分)",
@@ -605,6 +624,7 @@
             "name": "金融商品與量化分析微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://nccumab-micro-programs.netlify.app/courses_quant",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -635,6 +655,7 @@
             "name": "金融機構與貨幣政策微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://nccumab-micro-programs.netlify.app/courses_institution",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -666,6 +687,7 @@
             "name": "人力資源管理入門微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（必修 3 + 選修 6），並先修畢「管理學」",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs107",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -701,6 +723,7 @@
             "name": "供應鏈管理入門微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（必修 3 + 選修 6），並先修畢「管理學」",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs105",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -737,6 +760,7 @@
             "name": "行銷入門微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（必修 3 + 選修 6）",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs102",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -766,6 +790,7 @@
             "name": "財務管理微學程",
             "min_credits": 9.0,
             "description": "至少修滿 12 學分（必修 6 + 群修 6）",
+            "url": "https://finance.nccu.edu.tw/zh_tw/Curriculum/FinancialManagementMicroProgram/FinancialManagementMicroProgram2",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -796,6 +821,7 @@
             "name": "環境傳播微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://comm.nccu.edu.tw/PageDoc/Detail?fid=13818&id=34627",
             "requirements": [
                 {
                     "category": "基礎課程",
@@ -830,6 +856,7 @@
             "name": "國際傳播英語微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://comm.nccu.edu.tw/PageDoc/Detail?fid=13904&id=35368",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -860,6 +887,7 @@
             "name": "雙語跨域微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（至少含一門應用課程）",
+            "url": "https://english.nccu.edu.tw/PageDoc/Detail?fid=13868&id=35050",
             "requirements": [
                 {
                     "category": "應用課程 (Min 1 門)",
@@ -889,6 +917,7 @@
             "name": "基礎日語微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分（必修 8 + 選修 4）",
+            "url": "https://japanese.nccu.edu.tw/PageDoc/Detail?fid=13861&id=35035",
             "requirements": [
                 {
                     "category": "入門課程（必修）",
@@ -912,6 +941,7 @@
             "name": "日語理論與應用微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://japanese.nccu.edu.tw/PageDoc/Detail?fid=13862&id=35036",
             "requirements": [
                 {
                     "category": "核心課程（選修）",
@@ -929,6 +959,7 @@
             "name": "認識日本微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://japanese.nccu.edu.tw/PageDoc/Detail?fid=13863&id=35037",
             "requirements": [
                 {
                     "category": "核心課程（選修）",
@@ -949,6 +980,7 @@
             "name": "德語文化微學程",
             "min_credits": 10.0,
             "description": "至少修滿 10 學分（必修 4 + 通識或選修 6）",
+            "url": "https://european.nccu.edu.tw/PageDoc/Detail?fid=6640&id=34900",
             "general_education_courses": [
                 "德語區現代藝術賞析"
             ],
@@ -978,6 +1010,7 @@
             "name": "翻譯與跨文化微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分（跨文化領域修習之課程不得僅限於一個語種。註：因跨文化領域認列課程過於眾多，無法於此檢核，僅供檢核翻譯領域）",
+            "url": "https://foreign.nccu.edu.tw/portfolio-item/%e7%bf%bb%e8%ad%af%e8%88%87%e8%b7%a8%e6%96%87%e5%8c%96%e5%be%ae%e5%ad%b8%e7%a8%8b/",
             "requirements": [
                 {
                     "category": "翻譯領域",
@@ -1016,6 +1049,7 @@
             "name": "斯拉夫文化微學程",
             "min_credits": 10.0,
             "description": "至少修滿 10 學分",
+            "url": "https://slavic.nccu.edu.tw/PageDoc/Detail?fid=13897&id=35257",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -1040,6 +1074,7 @@
             "name": "斯拉夫文學微學程",
             "min_credits": 10.0,
             "description": "至少修滿 10 學分",
+            "url": "https://slavic.nccu.edu.tw/PageDoc/Detail?fid=13897&id=35263",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -1056,10 +1091,11 @@
                 }
             ]
         },
-        "hipster_creation": {
-            "name": "文青創意微學程",
+        "hipster_creatio_EMI": {
+            "name": "文青創意英文微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://english.nccu.edu.tw/PageDoc/Detail?fid=13868&id=35053",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -1091,6 +1127,7 @@
             "name": "環境與法律微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（必修 4 + 選修 5）",
+            "url": "https://www.law.nccu.edu.tw/zh_tw/departments/microprogram/%E7%92%B0%E5%A2%83%E8%88%87%E6%B3%95%E5%BE%8B%E5%BE%AE%E5%AD%B8%E7%A8%8B-69336800",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -1122,6 +1159,7 @@
             "name": "家事法專業微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分（必修 5 + 選修 7）",
+            "url": "https://www.law.nccu.edu.tw/zh_tw/departments/microprogram/%E5%AE%B6%E4%BA%8B%E6%B3%95%E5%BE%8B%E5%B0%88%E6%A5%AD%E5%BE%AE%E5%AD%B8%E7%A8%8B-28900317",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -1150,6 +1188,7 @@
             "name": "民事契約與訴訟實務微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分（必修 5 + 選修 7）",
+            "url": "https://www.law.nccu.edu.tw/zh_tw/departments/microprogram/%E6%B0%91%E4%BA%8B%E5%A5%91%E7%B4%84%E8%A8%B4%E8%A8%9F%E5%AF%A6%E5%8B%99%E5%B0%88%E6%A5%AD%E5%BE%AE%E5%AD%B8%E7%A8%8B-26275688",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -1175,6 +1214,7 @@
             "name": "智財商務微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分（基礎、進階、應用科目各至少一門）",
+            "url": "https://www.law.nccu.edu.tw/zh_tw/departments/microprogram/%E6%99%BA%E8%B2%A1%E5%95%86%E5%8B%99%E5%BE%AE%E5%AD%B8%E7%A8%8B-2258418",
             "requirements": [
                 {
                     "category": "基礎課程",
@@ -1219,6 +1259,7 @@
             "name": "量子計算微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（核心 6 學分 + 應用 3 學分）",
+            "url": "https://phys.nccu.edu.tw/PageDoc/Detail?fid=11929&id=21595",
             "requirements": [
                 {
                     "category": "核心課程 (Min 6 學分)",
@@ -1242,6 +1283,7 @@
             "name": "數理資訊微學程",
             "min_credits": 12.0,
             "description": "修滿 3 學分數學基礎科目、 6 學分資訊及AI核心科目及 3 學分總整進階或應用科目",
+            "url": "https://ms.nccu.edu.tw/PageDoc/Detail?fid=13734&id=33341",
             "requirements": [
                 {
                     "category": "數學基礎科目 (Min 3 學分)",
@@ -1283,6 +1325,7 @@
             "name": "AI產業應用微學程",
             "min_credits": 12.0,
             "description": "修滿6學分核心必修科目、3學分數學基礎科目及 3學分程式應用科目",
+            "url": "https://ms.nccu.edu.tw/PageDoc/Detail?fid=13735&id=33342",
             "requirements": [
                 {
                     "category": "核心必修科目 (Min 6 學分)",
@@ -1319,6 +1362,7 @@
             "name": "財經數理微學程",
             "min_credits": 12.0,
             "description": "修滿3學分基礎必修科目、6學分核心科目（數學＆經濟）及3學分進階或應用科目",
+            "url": "https://ms.nccu.edu.tw/PageDoc/Detail?fid=13736&id=33343",
             "requirements": [
                 {
                     "category": "基礎必修科目 (Min 3 學分)",
@@ -1367,6 +1411,7 @@
             "name": "數理統計微學程",
             "min_credits": 9.0,
             "description": "修滿6學分核心科目（統計＆機率）及3學分進階或應用科目",
+            "url": "https://ms.nccu.edu.tw/PageDoc/Detail?fid=13737&id=33344",
             "requirements": [
                 {
                     "category": "統計核心科目 (Min 3 學分)",
@@ -1402,6 +1447,7 @@
             "name": "精算基礎微學程",
             "min_credits": 12.0,
             "description": "修滿6學分核心基礎科目及6學分進階或應用科目",
+            "url": "https://ms.nccu.edu.tw/PageDoc/Detail?fid=13738&id=33348",
             "requirements": [
                 {
                     "category": "核心基礎科目 (Min 6 學分)",
@@ -1432,6 +1478,7 @@
             "name": "國防安全微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分，並包含基礎課程與核心課程至少各 1 門",
+            "url": "https://ocia.nccu.edu.tw/PageDoc/Detail?fid=13842&id=34932",
             "requirements": [
                 {
                     "category": "基礎課程 (Min 1 門)",
@@ -1462,6 +1509,7 @@
             "name": "全球發展與夥伴關係微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（基礎 3 + 進階或應用 6）",
+            "url": "https://ocia.nccu.edu.tw/PageDoc/Detail?fid=13843&id=34935",
             "general_education_courses": [
                 "環視全球—挑戰國際視野",
                 "移民與文化的十個關鍵字"
@@ -1498,6 +1546,7 @@
             "name": "中國研究微學程",
             "min_credits": 9.0,
             "description": "基礎 1 門 + 核心 2 門",
+            "url": "https://eastasia.nccu.edu.tw/PageDoc/Detail?fid=13905&id=35371",
             "requirements": [
                 {
                     "category": "基礎課程 (Min 1 門)",
@@ -1523,6 +1572,7 @@
             "name": "東南亞區域研究微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分（基礎 3 + 核心 6，同一名老師開設課程至多兩門）",
+            "url": "https://eastasia.nccu.edu.tw/PageDoc/Detail?fid=13906&id=35373",
             "general_education_courses": [
                 "東南亞發展與治理",
                 "東南亞社會與人文"
@@ -1554,6 +1604,7 @@
             "name": "俄羅斯與中東歐微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分（基礎 2 + 進階核心 6）",
+            "url": "https://rustudy.nccu.edu.tw/PageDoc/Detail?fid=619&id=36019",
             "requirements": [
                 {
                     "category": "基礎課程",
@@ -1579,6 +1630,7 @@
             "name": "教學媒體與科技微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分",
+            "url": "https://edu.nccu.edu.tw/PageDoc/Detail?fid=13932&id=35524",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1595,6 +1647,7 @@
             "name": "青少年心理、學習與輔導設計微學程",
             "min_credits": 8.0,
             "description": "至少修滿 8 學分",
+            "url": "https://edu.nccu.edu.tw/PageDoc/Detail?fid=13932&id=35525",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1613,6 +1666,7 @@
             "name": "全英語人工智慧創新應用微學程",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分（基礎 3 + 進階 6 + 應用 3）",
+            "url": "https://ici.nccu.edu.tw/PageDoc/Detail?fid=14328&id=37830",
             "requirements": [
                 {
                     "category": "基礎課程",
@@ -1648,6 +1702,7 @@
             "name": "資訊科學系微學程（人工智慧）",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://www.cs.nccu.edu.tw/uploads/regulation/tw/microcourse.pdf",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1665,6 +1720,7 @@
             "name": "資訊科學系微學程（多媒體）",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://www.cs.nccu.edu.tw/uploads/regulation/tw/microcourse.pdf",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1683,6 +1739,7 @@
             "name": "資訊科學系微學程（資訊安全）",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://www.cs.nccu.edu.tw/uploads/regulation/tw/microcourse.pdf",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1700,6 +1757,7 @@
             "name": "資訊科學系微學程（網路與資訊系統）",
             "min_credits": 12.0,
             "description": "至少修滿 12 學分",
+            "url": "https://www.cs.nccu.edu.tw/uploads/regulation/tw/microcourse.pdf",
             "requirements": [
                 {
                     "category": "認列範疇",
@@ -1718,6 +1776,7 @@
             "name": "資訊安全微學程",
             "min_credits": 9.0,
             "description": "修畢基礎、進階、應用各3學分之課程",
+            "url": "https://mpis.nccu.edu.tw/PageDoc/Detail?fid=13045&id=28685",
             "requirements": [
                 {
                     "category": "基礎課程 (Min 3 學分)",
@@ -1763,6 +1822,7 @@
             "name": "新興資訊科技英語微學程",
             "min_credits": 9.0,
             "description": "修畢所有指定課程",
+            "url": "https://coi.nccu.edu.tw/PageDoc/Detail?fid=13712&id=33124",
             "requirements": [
                 {
                     "category": "指定課程",
@@ -1780,6 +1840,7 @@
             "name": "行動實踐微學程",
             "min_credits": 9.0,
             "description": "至少修滿 9 學分",
+            "url": "https://x.nccu.edu.tw/about-college/regulations?page=2&fbclid=IwY2xjawP-eORleHRuA2FlbQIxMABicmlkETJtbnlsZ0NQNnJaYVFkQUpVc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHrPzf1IFT3_fA--pSq38mPxLGXOUsJQbVrfak3dryLMZWSDmxHwk1pwI4668_aem_n_8451CUE8ZuQ4f47rsNrw",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -1811,6 +1872,7 @@
             "name": "人文科技微學程",
             "min_credits": 9.0,
             "description": "修習至少9學分",
+            "url": "https://ccis.nccu.edu.tw/PageDoc/Detail?fid=13291&id=31700",
             "requirements": [
                 {
                     "category": "選修課程",
@@ -1845,6 +1907,7 @@
             "name": "人工智慧跨域微學程",
             "min_credits": 9.0,
             "description": "修畢基礎、進階、應用各3學分之課程，並具備學程指定程式能力指標條件",
+            "url": "https://iaic.nccu.edu.tw/micro-program",
             "requirements": [
                 {
                     "category": "基礎課程 (Min 3 學分)",

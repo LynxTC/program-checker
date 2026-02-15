@@ -3,7 +3,8 @@
         "innovation_entrepreneurship": {
             "name": "創新創業學程",
             "min_credits": 15.0,
-            "description": "修習認列科目達 15 學分（必修 6 + 選修 9，代表商學院參加創新創業相關國際競賽可得 1 選修學分）",
+            "description": "修習認列科目達 15 學分（必修 6 + 選修 9，代表商學院參加創新創業相關國際競賽可得 1 選修學分），並參加由創新創業辦公室所舉辦之講座或活動達 6 次",
+            "url": "https://oie.nccuc.tw/program/course",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -45,6 +46,7 @@
             "name": "企業永續經營與永續金融專長學程（學士班）",
             "min_credits": 15.0,
             "description": "修習認列科目達 15 學分（必修 7 + 群修 8）",
+            "url": "https://sp.nccuc.tw/curriculum",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -85,6 +87,7 @@
             "name": "企業永續經營與永續金融專長學程（碩士班）",
             "min_credits": 11.0,
             "description": "修習認列科目達 11 學分（必修 7 + 選修 4）",
+            "url": "https://sp.nccuc.tw/curriculum",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -128,6 +131,7 @@
             "name": "供應鏈管理專長學程（碩士班）",
             "min_credits": 9.0,
             "description": "修習認列科目達 9 學分",
+            "url": "https://commerce.nccu.edu.tw/zh_tw/feature/feature6/DProgram2",
             "requirements": [
                 {
                     "category": "群修課程",
@@ -163,6 +167,7 @@
             "name": "商業經濟學程",
             "min_credits": 21.0,
             "description": "修習認列科目達 21 學分（必修 6 + 群修 9 + 選修 6），並先修習「經濟學」",
+            "url": "https://ib.nccu.edu.tw/zh_tw/student_Info/bachelor_0/bachelor_4",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -216,6 +221,7 @@
             "name": "全球商情預測與投資分析專業學程",
             "min_credits": 24.0,
             "description": "修習認列科目達 24 學分，並先修畢「統計學/統計學（一）/統計學（二）」、「總體經濟學/進階總體經濟學」及「財務管理」各3學分以上",
+            "url": "https://ib.nccu.edu.tw/zh_tw/student_Info/bachelor_0/Program/-%E5%85%A8%E7%90%83%E5%95%86%E6%83%85%E9%A0%90%E6%B8%AC%E8%88%87%E6%8A%95%E8%B3%87%E5%88%86%E6%9E%90%E5%B0%88%E9%95%B7%E5%AD%B8%E7%A8%8B-%E4%BF%AE%E7%BF%92%E7%A7%91%E7%9B%AE%E4%B8%80%E8%A6%BD%E8%A1%A8-62341925",
             "requirements": [
                 {
                     "category": "先修課程：統計學",
@@ -275,6 +281,7 @@
             "name": "財務工程碩士學程",
             "min_credits": 21.0,
             "description": "修習認列科目達 21 學分（必修 15 + 選修 6）",
+            "url": "https://banking.nccu.edu.tw/zh_tw/News/%E7%89%B9%E8%89%B2%E5%AD%B8%E7%A8%8B-57307707",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -311,10 +318,11 @@
                 }
             ]
         },
-        "management_accounting": {
+        "CIMA": {
             "name": "（限商院）管理會計專業學程",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分。註：「經濟學」修習未達 6 學分不予採計。",
+            "url": "https://acct.nccu.edu.tw/zh_tw/Programs/CIMA",
             "requirements": [
                 {
                     "category": "認列科目範疇",
@@ -350,6 +358,7 @@
             "name": "巨量資料分析學程",
             "min_credits": 26.0,
             "description": "修習認列科目達 26 學分（必修至少 14），不採計原系所必修科目，原系所選修科目至多採計 2 門。註：本系統並未列入可替代科目",
+            "url": "https://stat.nccu.edu.tw/zh_tw/Program/BigData/classintro2",
             "requirements": [
                 {
                     "category": "必修課程：微積分/線性代數",
@@ -433,6 +442,7 @@
             "name": "營運與供應鏈管理學程",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分（必修 6 + 選修 12）",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs105",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -464,6 +474,7 @@
             "name": "人力資源管理學程（學士班）",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分（必修 3 門 + 核心 1 門 + 程序 2 門），並先修畢「管理學」",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs107",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -596,6 +607,7 @@
             "name": "人力資源管理學程（碩士班）",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分（必修 3 門 + 核心 1 門 + 程序 2 門），並先修畢「管理學」、「企業管理」或「組織理論與管理」其中一門課程",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs107",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -720,6 +732,7 @@
             "name": "行銷學程（學士班）",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分（必修 3 門 + 選修 3 門），且認列學分分數平均達 80 分，並先修畢「行銷管理」、「經濟學」3學分、「統計學」3學分及「管理學」/「企業管理」3學分，此外需參加指定講座達 5 場",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs102",
             "requirements": [
                 {
                     "category": "先修課程：行銷管理",
@@ -800,6 +813,7 @@
             "name": "行銷學程（碩士班）",
             "min_credits": 18.0,
             "description": "修習認列科目達 18 學分（必修 3 門 + 選修 3 門），且認列學分分數平均達 80 分，並先修畢「行銷管理」，此外需參加指定講座達 5 場",
+            "url": "https://ba.nccu.edu.tw/zh_tw/programs/Programs102",
             "requirements": [
                 {
                     "category": "先修課程：行銷管理",
@@ -857,6 +871,7 @@
             "name": "CFA核心學程",
             "min_credits": 13.0,
             "description": "修習認列科目達 13 學分（必修 4 + 選修 9），且認列學分分數平均達 80 分，需先修財管系大一二必修",
+            "url": "https://finance.nccu.edu.tw/zh_tw/Curriculum/admission_06/113%E5%AD%B8%E5%B9%B4%E5%BA%A6%E8%B2%A1%E7%AE%A1%E7%B3%BB%E5%AD%B8%E5%A3%AB%E7%8F%ADCFA%E6%A0%B8%E5%BF%83%E5%AD%B8%E7%A8%8B%E7%94%B3%E8%AB%8B%E5%85%AC%E5%91%8A-%E6%94%B6%E4%BB%B6%E6%88%AA%E6%AD%A2%E6%97%A5-113-04-08-26365705",
             "requirements": [
                 {
                     "category": "先修課程",
@@ -907,6 +922,7 @@
             "name": "不動產財務與管理核心學程",
             "min_credits": 26.0,
             "description": "修習認列科目達 26 學分（必修 17 + 選修 9），且認列學分分數平均達 70 分",
+            "url": "https://finance.nccu.edu.tw/zh_tw/news/114%E5%AD%B8%E5%B9%B4%E5%BA%A6%E8%B2%A1%E7%AE%A1%E7%B3%BB%E4%B8%8D%E5%8B%95%E7%94%A2%E8%B2%A1%E5%8B%99%E8%88%87%E7%AE%A1%E7%90%86%E6%A0%B8%E5%BF%83%E5%AD%B8%E7%A8%8B%E7%AC%AC%E4%BA%8C%E6%AC%A1%E7%94%B3%E8%AB%8B%E5%85%AC%E5%91%8A-%E6%94%B6%E4%BB%B6%E6%88%AA%E6%AD%A2%E6%97%A5-114-11-05-96720422",
             "requirements": [
                 {
                     "category": "必修課程",
@@ -946,6 +962,7 @@
             "name": "精算統計學程",
             "min_credits": 38.0,
             "description": "修習認列科目達 38 學分（含必修 23 + 群修 9）",
+            "url": "",
             "requirements": [
                 {
                     "category": "必修課程",

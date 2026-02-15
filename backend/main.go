@@ -41,6 +41,7 @@ type Program struct {
 	Name                    string               `json:"name"`
 	MinCredits              float64              `json:"min_credits"`
 	Description             string               `json:"description"`
+	URL                     string               `json:"url"`
 	Requirements            []ProgramRequirement `json:"requirements"`
 	Type                    string               `json:"type"`                      // "micro" (微學程) or "credit" (學分學程)
 	GeneralEducationCourses []string             `json:"general_education_courses"` // 通識課程列表 (全域限修一門)
@@ -62,6 +63,7 @@ type CategoryResult struct {
 // 最終檢核結果
 type CheckResult struct {
 	ProgramName        string           `json:"programName"`
+	ProgramURL         string           `json:"programUrl"`
 	IsCompleted        bool             `json:"isCompleted"`
 	TotalPassedCredits string           `json:"totalPassedCredits"` // 傳回字串方便前端顯示
 	MinRequiredCredits string           `json:"minRequiredCredits"`
@@ -107,6 +109,7 @@ type StudentDataWrapper []struct {
 type Recommendation struct {
 	ProgramID           string           `json:"programID"`
 	ProgramName         string           `json:"programName"`
+	ProgramURL          string           `json:"programUrl"`
 	Type                string           `json:"type"`
 	TotalPassedCredits  float64          `json:"totalPassedCredits"`
 	MinCredits          float64          `json:"minCredits"`
@@ -373,6 +376,7 @@ func checkProgramCompletion(programID string, courses []StudentCourse, studentMa
 
 	return CheckResult{
 		ProgramName:        program.Name,
+		ProgramURL:         program.URL,
 		IsCompleted:        isCompleted,
 		TotalPassedCredits: fmt.Sprintf("%.1f", totalPassedCredits),
 		MinRequiredCredits: fmt.Sprintf("%.1f", program.MinCredits),
@@ -522,6 +526,7 @@ func recommendProgramsHandler(w http.ResponseWriter, r *http.Request) {
 			recommendations = append(recommendations, Recommendation{
 				ProgramID:           id,
 				ProgramName:         program.Name,
+				ProgramURL:          program.URL,
 				Type:                program.Type,
 				TotalPassedCredits:  passed,
 				MinCredits:          min,
