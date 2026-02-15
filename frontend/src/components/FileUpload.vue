@@ -34,9 +34,8 @@ const triggerFileInput = () => {
     <div class="max-w-[612px] mx-auto mb-10 p-8 border-2 rounded-2xl transition-all duration-300 animate-entry delay-100 text-center relative"
         :class="[
             isDragging ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01] shadow-xl border-dashed' : 'border-dashed border-stone-200 bg-stone-50/50 hover:bg-stone-100/50'
-        ]" @dragover.prevent="!studentFile ? isDragging = true : null"
-        @dragleave.prevent="!studentFile ? isDragging = false : null"
-        @drop.prevent="!studentFile ? handleDrop($event) : null">
+        ]" @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false"
+        @drop.prevent="handleDrop($event)">
 
         <h2 class="text-2xl font-bold text-stone-700 mb-6 flex flex-col items-center justify-center gap-2 font-serif">
             <div class="flex items-center">📂 上傳全人資料</div>
