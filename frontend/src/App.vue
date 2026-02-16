@@ -775,7 +775,7 @@ onUnmounted(() => {
                 <button @click="showTermsModal = true"
                     class="hover:text-emerald-600 transition-colors font-medium">服務條款</button>
             </div>
-            <p class="mb-2">&copy; {{ new Date().getFullYear() }} 𤫹焈焈麀學程檢核器開發團隊. Licensed under the MIT License.</p>
+            <p class="mb-2">&copy; {{ new Date().getFullYear() }} 𤫹焈焈麀普羅安納利斯特團隊. Licensed under the MIT License.</p>
         </footer>
     </div>
 

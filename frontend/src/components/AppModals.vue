@@ -126,7 +126,7 @@ const emit = defineEmits([
             </div>
             <div class="p-6 sm:p-8 overflow-y-auto">
                 <div class="text-stone-600 space-y-4 leading-relaxed text-justify">
-                    <p>歡迎您使用「國立政治大學學程潛能分析師」（以下簡稱本工具）。本工具由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了讓您能夠安心使用本工具的各項服務與資訊，特此向您說明本工具的隱私權保護政策，以保障您的權益，請您詳閱下列內容：
+                    <p>歡迎您使用「ProAnalyst」（以下簡稱本工具）。本工具由𤫹焈焈麀普羅安納利斯特團隊開發與維護。為了讓您能夠安心使用本工具的各項服務與資訊，特此向您說明本工具的隱私權保護政策，以保障您的權益，請您詳閱下列內容：
                     </p>
 
                     <h4 class="font-bold text-emerald-800 text-lg mt-4">一、隱私權保護政策的適用範圍</h4>
@@ -167,7 +167,7 @@ const emit = defineEmits([
             </div>
             <div class="p-6 sm:p-8 overflow-y-auto">
                 <div class="text-stone-600 space-y-4 leading-relaxed text-justify">
-                    <p>歡迎使用「國立政治大學學程潛能分析師」（以下簡稱本服務）。本服務由𤫹焈焈麀學程檢核器開發團隊開發與維護。為了保障您的權益，請詳細閱讀本服務條款。</p>
+                    <p>歡迎使用「ProAnalyst」（以下簡稱本服務）。本服務由𤫹焈焈麀普羅安納利斯特團隊開發與維護。為了保障您的權益，請詳細閱讀本服務條款。</p>
 
                     <h4 class="font-bold text-emerald-800 text-lg mt-4">一、認知與接受條款</h4>
                     <p>當您開始使用本服務時，即表示您已閱讀、瞭解並同意接受本服務條款之所有內容。若您不同意本服務條款的任何部分，請立即停止使用本服務。</p>
