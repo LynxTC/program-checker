@@ -105,7 +105,7 @@ program-checker/
 * `data/credit_programs.json`: 一般學分學程
 * `data/micro_programs.json`: 微學程
 * `data/commerce_specialty_programs.json`: 院級專長學程（目前僅商學院使用）
-* `data/departments_grouped.json`: 系所歸屬定義（用於判斷學生學藉歸屬，檢查是否牴觸學程身分限制）
+* `data/departments_grouped.json`: 系所歸屬定義（用於判斷學生學籍歸屬，檢查是否牴觸學程身分限制）
 
 ### **JSON 結構說明**
 
